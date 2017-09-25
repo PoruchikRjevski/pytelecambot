@@ -10,3 +10,8 @@ rec video xxx - get video from now xxx seconds
 show video - show recorded videos
 get video xxx - get video by name xxx
 with audio - same commands
+
+For exec:
+- python 3.6.2
+- telegrambotapi
+-
