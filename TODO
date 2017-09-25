@@ -2,5 +2,11 @@ v 0.1.xxx
 
 - add versionalisation
 - add menu
-- add lib to capture media
+
+v 0.2.xxx
+
 - add autentification
+
+v 0.3.xxx
+- add using sqlite3
+- add lib to capture media
