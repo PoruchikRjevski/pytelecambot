@@ -32,6 +32,8 @@ A_D_CONRTOL     = 'CONTROL'
 ADMIN_M             = [A_D_ADD, A_D_KICK, A_D_WHO_REG, A_D_WHO_ARE]
 
 
+NEXT_M      = 'NEXT'
+
 N_R_REG     = 'REGISTER'
 
 BACK_M      = 'BACK'

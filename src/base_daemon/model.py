@@ -1,3 +1,5 @@
+import collections
+
 import base_daemon.base_daemon as b_d
 
 __all__ = ['UserModel']
@@ -5,9 +7,9 @@ __all__ = ['UserModel']
 class UserModel:
     def __init__(self, path):
         self.__admins = []
-        self.__viewers = {}
-        self.__reg_req = {}
-        self.__unreg_req = {}
+        self.__viewers = collections.OrderedDict()
+        self.__reg_req = collections.OrderedDict()
+        self.__unreg_req = collections.OrderedDict()
         self.__path = path
         b_d.DB_PATH = path
 
@@ -35,14 +37,19 @@ class UserModel:
     def add_unreg_req(self, t_id, t_name):
         self.__unreg_req[t_id] = t_name
 
-    def add_viewer(self, id, name):
+    def add_viewer(self, id):
+        name = self.__reg_req[id]
         self.__viewers[id] = name
         b_d.add_viewer(id, name)
+
+        del self.__reg_req[id]
 
     def rem_viewer(self, id):
         if id in self.__viewers.keys():
             del self.__viewers[id]
             b_d.rem_viewer(id)
+
+            del self.__unreg_req[id]
 
     def is_viewer(self, id):
         return id in self.__viewers

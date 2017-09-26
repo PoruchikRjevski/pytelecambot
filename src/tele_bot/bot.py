@@ -19,6 +19,9 @@ stop_flag = [True]
 
 user_model = None
 
+cur_item = -1
+cur_action = ''
+
 
 def set_model(model):
     global user_model
@@ -27,15 +30,14 @@ def set_model(model):
 
 @bot.message_handler(commands=[C_START, C_HELP])
 def handle_start_help(message):
-    markup = telebot.types.ReplyKeyboardMarkup()
+    t_id = message.chat.id
+
     if message.chat.id == ADMIN_ID:
         show_admin_m()
-    elif user_model.is_viewer(message.chat.id):
-        show_viewer_m()
+    elif user_model.is_viewer(t_id):
+        show_viewer_m(t_id)
     else:
-        markup.row(N_R_REG)
-
-    bot.send_message(message.chat.id, "You move:", reply_markup=markup)
+        show_unreg_m(t_id)
 
 
 @bot.message_handler(content_types=["text"])
@@ -46,11 +48,15 @@ def handle_text(message):
     print("text: {:s}".format(t_comm))
     print("id: {:s}".format(str(t_id)))
 
-    if message.chat.id == ADMIN_ID:
+    if t_comm == C_HELP or t_comm == C_START:
+        handle_start_help(message)
+        return
+
+    if t_id == ADMIN_ID:
         if t_comm == A_D_ADD:
-            pass
+            add_viewer()
         elif t_comm == A_D_KICK:
-            pass
+            kick_viewer()
         elif t_comm == A_D_WHO_REG:
             show_who_want_reg()
         elif t_comm == A_D_WHO_UREG:
@@ -61,6 +67,10 @@ def handle_text(message):
             show_control_m(ADMIN_ID)
         elif t_comm == BACK_M:
             show_admin_m()
+        elif t_comm == R_LAST_F:
+            show_last_frame(ADMIN_ID)
+        elif t_comm == NEXT_M:
+            show_next_want_reg()
     elif user_model.is_viewer(t_id):
         if t_comm == R_UNREG:
             unregister_request(t_id, t_name)
@@ -68,20 +78,98 @@ def handle_text(message):
             show_control_m(t_id)
         elif t_comm == BACK_M:
             show_viewer_m(t_id)
+        elif t_comm == R_LAST_F:
+            show_last_frame(t_id)
     else:
         if t_comm == N_R_REG:
             register_request(t_id, t_name)
 
 
-def show_viewer_m():
+def show_next_want_reg():
+    global user_model
+    global cur_item
+    global cur_action
+
+    c_dict = {}
+
+    if cur_action == A_D_WHO_REG:
+        c_dict = user_model.reg_req
+    elif cur_action == A_D_WHO_UREG:
+        c_dict = user_model.unreg_req
+    elif cur_action == A_D_WHO_ARE:
+        c_dict = user_model.viewers
+
+    if cur_item == -1:
+        cur_item = 0
+    else:
+        if len(c_dict) >= cur_item:
+            cur_item = 0
+        else:
+            cur_item += 1
+
+    (n_id, n_name) = list(c_dict.items())[cur_item]
+    bot.send_message(ADMIN_ID, "\"{:s} : {:s}\"".format(n_name, str(n_id)))
+
+
+def show_last_frame(id):
+    bot.send_message(ADMIN_ID, "There are will be last frame.")
+
+
+def add_viewer():
+    global user_model
+    global cur_item
+    global cur_action
+
+    if cur_item != -1 and cur_action == A_D_WHO_REG:
+        (c_id, c_name) = list(user_model.reg_req.items())[cur_item]
+
+        user_model.add_viewer(c_id)
+        show_viewer_added(c_id, c_name)
+
+
+def show_viewer_added(id, name):
+    bot.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was added to viewers".format(name, str(id)))
+    bot.send_message(id, "You are registered")
+    show_viewer_m(id)
+
+
+def kick_viewer():
+    global user_model
+    global cur_item
+    global cur_action
+
+    if cur_item != -1 and (cur_action == A_D_WHO_UREG or cur_action == A_D_WHO_ARE):
+        (c_id, c_name) = list(user_model.unreg_req.items())[cur_item]
+
+        user_model.rem_viewer(c_id)
+        show_viewer_kicked(c_id, c_name)
+
+
+def show_viewer_kicked(id, name):
+    bot.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was kicked from viewers".format(name, str(id)))
+    bot.send_message(id, "You are kicked")
+    show_unreg_m(id)
+
+
+def show_unreg_m(t_id):
+    markup = telebot.types.ReplyKeyboardMarkup()
+    markup.row(N_R_REG)
+    bot.send_message(t_id, "You move:", reply_markup=markup)
+
+
+def show_viewer_m(t_id):
     markup = telebot.types.ReplyKeyboardMarkup()
     markup.row(R_UNREG, A_D_CONRTOL)
-    bot.send_message(ADMIN_ID, "You move:", reply_markup=markup)
+    bot.send_message(t_id, "You move:", reply_markup=markup)
 
 
 def show_admin_m():
+    global cur_action
+    global cur_item
+    cur_action = ''
+    cur_item = -1
+
     markup = telebot.types.ReplyKeyboardMarkup()
-    markup.row(A_D_ADD, A_D_KICK)
     markup.row(A_D_WHO_REG, A_D_WHO_UREG, A_D_WHO_ARE)
     markup.row(A_D_CONRTOL)
     bot.send_message(ADMIN_ID, "You move:", reply_markup=markup)
@@ -124,20 +212,63 @@ def alert_want_reg():
 
 def show_who_want_reg():
     global user_model
+    global cur_action
+
+    if len(user_model.reg_req) == 0:
+        bot.send_message(ADMIN_ID, "Nobody")
+        return
+
+    cur_action = A_D_WHO_REG
+
     w_reg_s = "\n".join(["{:s} : {:s}".format(str(k), name) for (k, name) in user_model.reg_req.items()])
     bot.send_message(ADMIN_ID, "They want to reg: \n {:s}".format(w_reg_s))
+    show_select_menu()
+    show_next_want_reg()
+
+
+def show_select_menu():
+    global cur_action
+
+    markup = telebot.types.ReplyKeyboardMarkup()
+    if cur_action == A_D_WHO_ARE:
+        markup.row(A_D_ADD, NEXT_M, A_D_KICK)
+    elif cur_action == cur_action == A_D_WHO_REG:
+        markup.row(A_D_ADD, NEXT_M)
+    elif cur_action == A_D_WHO_UREG:
+        markup.row(A_D_KICK, NEXT_M)
+    markup.row(BACK_M)
+    bot.send_message(ADMIN_ID, "You move:", reply_markup=markup)
 
 
 def show_who_want_unreg():
     global user_model
+    global cur_action
+
+    if len(user_model.unreg_req) == 0:
+        bot.send_message(ADMIN_ID, "Nobody")
+        return
+
+    cur_action = A_D_WHO_UREG
+
     w_ureg_s = "\n".join(["{:s} : {:s}".format(str(k), name) for (k, name) in user_model.unreg_req.items()])
     bot.send_message(ADMIN_ID, "They want to unreg: \n {:s}".format(w_ureg_s))
+    show_select_menu()
+    show_next_want_reg()
 
 
 def show_who_viewer():
     global user_model
+    global cur_action
+    cur_action = A_D_WHO_ARE
+
+    if len(user_model.viewers) == 0:
+        bot.send_message(ADMIN_ID, "Nobody")
+        return
+
     w_viewer_s = "\n".join(["{:s} : {:s}".format(str(k), name) for (k, name) in user_model.viewers.items()])
     bot.send_message(ADMIN_ID, "They want to unreg: \n {:s}".format(w_viewer_s))
+    show_select_menu()
+    show_next_want_reg()
 
 
 def say_who_want_reg():
