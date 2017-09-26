@@ -47,7 +47,7 @@ def add_viewer(t_id, t_name):
         viewers = config_h._sections[VIEWERS_BLK]
 
     viewers[t_id] = t_name
-    config_h._sections[VIEWERS_BLK] = viewers
+    config_h[VIEWERS_BLK] = viewers
 
     write_cfg()
 
@@ -61,5 +61,5 @@ def rem_viewer(t_id):
 
         if t_id in viewers.keys():
             del viewers[t_id]
-            config_h._sections[VIEWERS_BLK] = viewers
+            config_h[VIEWERS_BLK] = viewers
             write_cfg()

@@ -54,8 +54,8 @@ class UserModel:
 
     def is_viewer(self, t_id):
         if t_id in self.__viewers.keys():
-            return False
-        else:
             return True
+
+        return False
 
 
