@@ -17,46 +17,31 @@ def init_base():
 
 def get_viewers():
     if config_h.has_section(VIEWERS_BLK):
-        if config_h.has_option(VIEWERS_BLK, IDS_SECT):
-            return config_h.get(VIEWERS_BLK, IDS_SECT).split(",")
-    return []
+        return config_h[VIEWERS_BLK].items()
+        # if config_h.has_option(VIEWERS_BLK, IDS_SECT):
+        #     return config_h.get(VIEWERS_BLK, IDS_SECT).split(",")
+    return {}
+
 
 def write_cfg():
     with open(DB_PATH, 'w') as cfg_f:
         config_h.write(cfg_f)
 
 
-def add_viewer(id):
+def add_viewer(id, name):
     if config_h.has_section(VIEWERS_BLK):
-        if config_h.has_option(VIEWERS_BLK, IDS_SECT):
-            viewers_l = config_h.get(VIEWERS_BLK, IDS_SECT).split(",")
+        viewers = config_h[VIEWERS_BLK].items()
+        viewers[id] = name
+        config_h[VIEWERS_BLK] = viewers
 
-            if isinstance(viewers_l, list):
-                if id not in viewers_l:
-                    viewers_l.append(id)
-            else:
-                if id != viewers_l:
-                    viewers_l = [viewers_l, id]
-
-            viewers = ",".join(viewers_l)
-
-            config_h.set(VIEWERS_BLK, IDS_SECT, viewers)
-            write_cfg()
+        write_cfg()
 
 
 def rem_viewer(id):
     if config_h.has_section(VIEWERS_BLK):
-        if config_h.has_option(VIEWERS_BLK, IDS_SECT):
-            viewers_l = config_h.get(VIEWERS_BLK, IDS_SECT).split(",")
+        viewers = config_h[VIEWERS_BLK].items()
 
-            if isinstance(viewers_l, list):
-                if id in viewers_l:
-                    viewers_l.remove(id)
-            else:
-                if id == viewers_l:
-                    viewers_l = []
-
-            viewers = ",".join(viewers_l)
-
-            config_h.set(VIEWERS_BLK, IDS_SECT, viewers)
+        if id in viewers.keys():
+            del viewers[id]
+            config_h[VIEWERS_BLK] = viewers
             write_cfg()

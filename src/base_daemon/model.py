@@ -5,7 +5,9 @@ __all__ = ['UserModel']
 class UserModel:
     def __init__(self, path):
         self.__admins = []
-        self.__viewers = []
+        self.__viewers = {}
+        self.__reg_req = {}
+        self.__unreg_req = {}
         self.__path = path
         b_d.DB_PATH = path
 
@@ -19,13 +21,28 @@ class UserModel:
     def viewers(self):
         return self.__viewers
 
-    def add_viewer(self, id):
-        self.__viewers.append(id)
-        b_d.add_viewer(id)
+    @property
+    def reg_req(self):
+        return self.__reg_req
+
+    def add_reg_req(self, t_id, t_name):
+        self.__reg_req[t_id] = t_name
+
+    @property
+    def unreg_req(self):
+        return self.__unreg_req
+
+    def add_unreg_req(self, t_id, t_name):
+        self.__unreg_req[t_id] = t_name
+
+    def add_viewer(self, id, name):
+        self.__viewers[id] = name
+        b_d.add_viewer(id, name)
 
     def rem_viewer(self, id):
-        self.__viewers.remove(id)
-        b_d.rem_viewer(id)
+        if id in self.__viewers.keys():
+            del self.__viewers[id]
+            b_d.rem_viewer(id)
 
     def is_viewer(self, id):
         return id in self.__viewers
