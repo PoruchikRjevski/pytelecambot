@@ -14,4 +14,29 @@ with audio - same commands
 For exec:
 - python 3.6.2
 - telegrambotapi
--
+- sqlitebrowser
+
+
+
+
+
+
+Modules:
+- PyTeleCamBot
+    - command interpreter:
+        - get last frame
+        - get last video
+    - Observer
+        - get one video frame per half second and compare it with previous. rewrite previouse by current(OP)
+            - if cmp == true: wait
+            - if cmp == false:
+                - run writing video+audio for specified time in other process(WP)
+                - send message to telegramm channels about moving with photo
+            - if WP already write - increase time to write for one more specified time
+            - if cmp == false: save frame not in temp dir with date on frame
+
+- user base sqlite3
+    - users: id, name, phone, code
+    - groups: admin, viewer
+    - channels: - chat id
+- PyRunnerBot - rx commands with registered modules_names and execute it
