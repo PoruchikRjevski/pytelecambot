@@ -37,22 +37,25 @@ class UserModel:
     def add_unreg_req(self, t_id, t_name):
         self.__unreg_req[t_id] = t_name
 
-    def add_viewer(self, id):
-        name = self.__reg_req[id]
-        self.__viewers[id] = name
-        b_d.add_viewer(id, name)
+    def add_viewer(self, t_id):
+        name = self.__reg_req[t_id]
+        self.__viewers[t_id] = name
+        b_d.add_viewer(t_id, name)
 
-        del self.__reg_req[id]
+        del self.__reg_req[t_id]
 
-    def rem_viewer(self, id):
-        if id in self.__viewers.keys():
-            del self.__viewers[id]
-            b_d.rem_viewer(id)
+    def rem_viewer(self, t_id):
+        if t_id in self.__viewers.keys():
+            del self.__viewers[t_id]
+            b_d.rem_viewer(t_id)
 
-            if id in self.__unreg_req.keys():
-                del self.__unreg_req[id]
+            if t_id in self.__unreg_req.keys():
+                del self.__unreg_req[t_id]
 
-    def is_viewer(self, id):
-        return id in self.__viewers
+    def is_viewer(self, t_id):
+        if t_id in self.__viewers.keys():
+            return False
+        else:
+            return True
 
 

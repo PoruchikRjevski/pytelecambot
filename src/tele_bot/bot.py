@@ -80,10 +80,12 @@ def handle_text(message):
             show_viewer_m(t_id)
         elif t_comm == R_LAST_F:
             show_last_frame(t_id)
+        else:
+            show_viewer_m(t_id)
     else:
         if t_comm == N_R_REG:
             register_request(t_id, t_name)
-        elif t_comm == UPD_M:
+        else:
             show_unreg_m(t_id)
 
 

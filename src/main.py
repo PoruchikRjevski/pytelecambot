@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     update_ver()
 
-    user_mod = UserModel(cfg.INI_PATH)
+    user_mod = UserModel(os.path.join(os.getcwd(), cfg.INI_PATH))
 
     c_b.set_model(user_mod)
     c_b.start_listen()
