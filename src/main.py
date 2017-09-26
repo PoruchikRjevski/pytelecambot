@@ -7,6 +7,8 @@ import version as ver
 import tele_bot.bot as c_b
 from logger import *
 from git_man import *
+from base_daemon import *
+# from sql_daemon import *
 
 # bot = telebot.TeleBot(c_v.token)
 
@@ -43,7 +45,10 @@ from git_man import *
 
 def update_ver():
     ver.V_COMM = get_commits_num()
-
+    ver.V_FULL = "{:s}.{:s}.{:s}.{:s}".format(ver.V_MAJ,
+                                              ver.V_MIN,
+                                              ver.V_COMM,
+                                              ver.V_BRANCH)
 
 if __name__ == '__main__':
     log_set_mt(cfg.MULTITHREAD)
@@ -52,6 +57,9 @@ if __name__ == '__main__':
 
     update_ver()
 
+    user_mod = UserModel(cfg.INI_PATH)
+
+    c_b.set_model(user_mod)
     c_b.start_listen()
 
     if cfg.MULTITHREAD:

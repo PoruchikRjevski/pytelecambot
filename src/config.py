@@ -1,10 +1,11 @@
-CONTROL = "control"
-TAKE_PHOTO = "photo"
-TAKE_VIDEO = "video"
-TAKE_AUDIO = "audio"
+CONTROL         = "control"
+TAKE_PHOTO      = "photo"
+TAKE_VIDEO      = "video"
+TAKE_AUDIO      = "audio"
 
-token = '364842219:AAEl03t9yKk0qxz0afTWDLwVaPRIzWpYRZc'
-help_msg = "send: control - to get menu"
+
+
+token           = '364842219:AAEl03t9yKk0qxz0afTWDLwVaPRIzWpYRZc'
 
 # PATHES
 LOG_P           = "../LOG/"
@@ -14,4 +15,6 @@ LOG_P           = "../LOG/"
 MULTITHREAD     = False
 QUIET           = False
 
-# CODES
+# DB
+DB_PATH         = "../misc/main"
+INI_PATH        = "../misc/main.ini"
