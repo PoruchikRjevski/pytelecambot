@@ -49,7 +49,8 @@ class UserModel:
             del self.__viewers[id]
             b_d.rem_viewer(id)
 
-            del self.__unreg_req[id]
+            if id in self.__unreg_req.keys():
+                del self.__unreg_req[id]
 
     def is_viewer(self, id):
         return id in self.__viewers

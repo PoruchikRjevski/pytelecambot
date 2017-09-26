@@ -16,6 +16,9 @@ def init_base():
 
 
 def get_viewers():
+    global config_h
+    global DB_PATH
+
     if config_h.has_section(VIEWERS_BLK):
         return config_h[VIEWERS_BLK].items()
         # if config_h.has_option(VIEWERS_BLK, IDS_SECT):
@@ -24,11 +27,17 @@ def get_viewers():
 
 
 def write_cfg():
+    global config_h
+    global DB_PATH
+
     with open(DB_PATH, 'w') as cfg_f:
         config_h.write(cfg_f)
 
 
 def add_viewer(id, name):
+    global config_h
+    global DB_PATH
+
     if config_h.has_section(VIEWERS_BLK):
         viewers = config_h[VIEWERS_BLK].items()
         viewers[id] = name
@@ -38,6 +47,9 @@ def add_viewer(id, name):
 
 
 def rem_viewer(id):
+    global config_h
+    global DB_PATH
+
     if config_h.has_section(VIEWERS_BLK):
         viewers = config_h[VIEWERS_BLK].items()
 

@@ -33,6 +33,7 @@ ADMIN_M             = [A_D_ADD, A_D_KICK, A_D_WHO_REG, A_D_WHO_ARE]
 
 
 NEXT_M      = 'NEXT'
+UPD_M       = 'UPD_M'
 
 N_R_REG     = 'REGISTER'
 
