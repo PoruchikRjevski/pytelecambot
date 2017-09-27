@@ -5,20 +5,24 @@ ADMIN_ID                = '74810100' # 74810100
 TOKEN                   = '364842219:AAEl03t9yKk0qxz0afTWDLwVaPRIzWpYRZc'
 UPD_TMT                 = 1
 
+# messages
+BOT_START               = "Бусинко-наблюдатель({:s}) запущен"
+BOT_STOP                = "Бусинко-наблюдатель остановлен"
+TO_RULE                 = "Командуй"
+
 # commands
 C_START                 = 'start'
-C_STOP                  = 'stop'
 C_HELP                  = 'help'
 
-C_V_UREG                = 'unreg'
+C_V_UREG                = 'Удалиться'
 
-C_U_REG                 = 'reg'
+C_U_REG                 = 'Зарегистрироваться'
 
-C_CTRL                  = 'control'
-C_BACK                  = 'back'
-C_LAST_F                = 'last_f'
-C_UPD                   = 'upd'
-C_GET                   = 'get'
+C_CTRL                  = 'Управление'
+C_BACK                  = 'Назад'
+C_LAST_F                = 'Последний кадр'
+C_UPD                   = 'Обновить'
+C_GET                   = 'Меню'
 
 C_A_RES                 = 'restart'
 C_A_STOP                = 'stop'
@@ -71,47 +75,3 @@ UNDEF_MARK = telebot.types.ReplyKeyboardMarkup()
 for row in VIEWERS_M:
     UNDEF_MARK.row(*row)
 
-
-
-# ---------------------------------------------
-
-
-HEAD_MSG            = ("PyTeleCamBot v{:s}\n"
-                       "To control me use next commands:\n"
-                       "/start or /help - получить еще раз это сообщение\n{:s}")
-
-REG_MSG             = ("/reg - подписаться к рассылке алертов\n"
-                       "/unreg - отписаться от рассылки алертов")
-
-WORK_MSG            = ("/last_f - получить последний снятый кадр\n"
-                       "...")
-
-
-REG_A = 'REG'
-UNREG_A = 'UNREG'
-MOVE_A = 'MOVE'
-
-
-
-
-
-A_D_ADD         = 'ADD'
-A_D_KICK        = 'KICK'
-A_D_WHO_REG     = 'WHO_W'
-A_D_WHO_UREG    = 'WHO_U'
-A_D_WHO_ARE     = 'WHO_A'
-A_D_CONRTOL     = 'CONTROL'
-
-# ADMIN_M             = [A_D_ADD, A_D_KICK, A_D_WHO_REG, A_D_WHO_ARE]
-
-
-NEXT_M      = 'NEXT'
-UPD_M       = 'UPD_M'
-
-N_R_REG     = 'REGISTER'
-
-BACK_M      = 'BACK'
-
-
-R_UNREG     = 'UNREGISTER'
-R_LAST_F    = 'LAST_F'

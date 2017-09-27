@@ -1,12 +1,15 @@
 v 0.1.xxx
-
-- add versionalisation
-- add menu
++ add versionalisation
++ add menu
 
 v 0.2.xxx
-
-- add autentification
++ add model
++ add db manager(ini)
++ add autentification
 
 v 0.3.xxx
-- add using sqlite3
++ rewrite all 0.2
 - add lib to capture media
+
+v 0.3.xxx
+- add db manager(sqlite3)
