@@ -18,6 +18,7 @@ C_CTRL                  = 'control'
 C_BACK                  = 'back'
 C_LAST_F                = 'last_f'
 C_UPD                   = 'upd'
+C_GET                   = 'get'
 
 C_A_RES                 = 'restart'
 C_A_STOP                = 'stop'
@@ -30,6 +31,12 @@ C_R_NEXT                = 'next'
 C_R_KICK                = 'kick'
 
 # keyboards
+GET_M                   = [[C_GET]]
+GET_MARK = telebot.types.ReplyKeyboardMarkup()
+for row in GET_M:
+    GET_MARK.row(*row)
+
+
 ADMIN_M                 = [[C_A_STOP, C_A_RES],
                            [C_A_WHO_R, C_A_WHO_UR, C_A_WHO_ARE],
                            [C_CTRL],

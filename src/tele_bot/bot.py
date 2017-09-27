@@ -34,6 +34,8 @@ class Tele_Bot(telebot.TeleBot):
 
             if t_comm == C_A_RES:
                 self.__restart_bot(msg)
+            elif t_comm == C_GET:
+                self.__show_m(msg)
             elif t_comm == C_A_STOP:
                 self.__stop_bot(msg)
             elif t_comm == C_CTRL:
@@ -87,7 +89,7 @@ class Tele_Bot(telebot.TeleBot):
         t_id = str(msg.chat.id)
 
         if t_id == ADMIN_ID:
-            self.__show_admin_m()
+            self.__show_admin_m(msg)
         elif self.__model.is_viewer(t_id):
             self.__show_viewer_m(msg)
         else:
@@ -106,11 +108,22 @@ class Tele_Bot(telebot.TeleBot):
     def __show_undef_m(self, msg):
         self.send_message(msg.chat.id, "You rules:", reply_markup=UNDEF_MARK)
 
-    def __show_admin_m(self):
+    @hi_protect
+    def __show_admin_m(self, _):
         self.send_message(ADMIN_ID, "You rules:", reply_markup=ADMIN_MARK)
 
     def __show_reg_m(self):
         self.send_message(ADMIN_ID, "You rules:", reply_markup=REG_MARK)
+
+    def __show_get_m(self):
+        self.send_message(ADMIN_ID, "You rules:", reply_markup=GET_MARK)
+
+        len_v = self.__model.get_viewers_len()
+
+        for i in range(0, len_v):
+            (s_id, s_name) = self.__model.get_viewer_by_i(i)
+
+            self.send_message(s_id, "You rules:", reply_markup=GET_MARK)
 
     @hi_protect
     def __show_next_reg(self, _):
@@ -234,7 +247,8 @@ class Tele_Bot(telebot.TeleBot):
 
     def start_loop(self):
         self.send_message(ADMIN_ID, "Bot was started")
-        self.__show_admin_m()
+
+        self.__show_get_m()
 
         offset = None
 
