@@ -1,0 +1,1 @@
+OBSERVING_TMT               = 1 # ms

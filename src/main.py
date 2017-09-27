@@ -1,6 +1,9 @@
 #!/usr/bin/sudo python3
 
 import os
+import time
+import threading
+import queue
 
 import config as cfg
 import version as ver
@@ -8,6 +11,7 @@ from tele_bot.bot import *
 from logger import *
 from git_man import *
 from model import *
+from observer import *
 # from sql_daemon import *
 
 
@@ -19,17 +23,39 @@ def update_ver():
                                               ver.V_BRANCH)
 
 if __name__ == '__main__':
+    # preprocess
     log_set_mt(cfg.MULTITHREAD)
     log_set_q(cfg.QUIET)
     log_init(os.path.join(os.getcwd(), cfg.LOG_P))
 
     update_ver()
 
+    # create essence
+    alert_queue = queue.Queue()
+
     user_mod = UserModel(os.path.join(os.getcwd(), cfg.INI_PATH))
     tele_bot = Tele_Bot(user_mod)
+    tele_bot.set_queue(alert_queue)
+    # observ = Observer()
 
-    tele_bot.do_work()
+    # create threads
+    tb_t = threading.Thread(target=tele_bot.do_work)
+    # obs_t = threading.Thread(target=observ.do_work())
+    # tele_bot.do_work()
 
+    # start work
+    tb_t.start()
+    # obs_t.start()
+
+    # test
+    # time.sleep(5)
+    alert_queue.put(open(os.path.join(os.getcwd(), cfg.LAST_D_P, cfg.LAST_F_T), 'rb'))
+    # test
+
+    # wait threads
+    tb_t.join()
+
+    # postprocess
     if cfg.MULTITHREAD:
         log_out_deffered()
 

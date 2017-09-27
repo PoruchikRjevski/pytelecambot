@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 import queue
 
 import telebot
@@ -20,6 +21,8 @@ class Tele_Bot(telebot.TeleBot):
         self.__stop_f = False
 
         self.__model = u_model
+
+        self.__alert_q = queue.Queue()
 
         self.__reg_state = ''
         self.__reg_pos = None
@@ -226,6 +229,16 @@ class Tele_Bot(telebot.TeleBot):
         self.send_message(ADMIN_ID, NOBODY)
         return False
 
+    def __show_alert(self):
+        if self.__alert_q.empty():
+            return
+
+        self.send_photo(ADMIN_ID, photo=self.__alert_q.get())
+
+        # for i in range(0, self.__model.get_viewers_len()):
+        #     (s_id, s_name) = self.__model.get_viewer_by_i(i)
+        #     self.send_message(s_id, BOT_STOP)
+
     @hi_protect
     def __do_reg(self, msg):
         t_comm = msg.text
@@ -300,10 +313,11 @@ class Tele_Bot(telebot.TeleBot):
         self.send_message(ADMIN_ID, "Bad try kick viewer")
         return False
 
-    def __start_loop(self):
+    def __main_loop(self):
         self.__show_bot_started()
 
         offset = None
+
         while not self.__stop_f:
             updates = self.get_updates(offset, timeout=UPD_TMT)
 
@@ -312,7 +326,12 @@ class Tele_Bot(telebot.TeleBot):
                 offset = updates[-1].update_id + 1
                 self.process_new_updates(updates)
 
+            self.__show_alert()
+
         self.__show_bot_stopped()
 
     def do_work(self):
-        self.__start_loop()
+        self.__main_loop()
+
+    def set_queue(self, a_queue):
+        self.__alert_q = a_queue

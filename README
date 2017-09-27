@@ -13,9 +13,12 @@ with audio - same commands
 
 For exec:
 - python 3.6.2
-- telegrambotapi
-- sqlitebrowser
-- libsqlite3-dev
+- pip:
+    - telegrambotapi
+    - opencv-python
+- apt:
+    - sqlitebrowser
+    - libsqlite3-dev
 
 
 
