@@ -25,6 +25,12 @@ class Tele_Bot(telebot.TeleBot):
         self.__reg_pos = None
         self.__reg_item = None
 
+        # test
+        self.__model.add_reg_req("123asd", "asd")
+        self.__model.add_reg_req("123qwe", "qwe")
+
+        # test
+
         @bot.message_handler(commands=[C_START, C_HELP])
         def handle_start(msg):
             self.__show_m(msg)
@@ -41,7 +47,7 @@ class Tele_Bot(telebot.TeleBot):
                 self.__show_ctrl_m(msg)
             elif t_comm == C_A_WHO_ARE or t_comm == C_A_WHO_R or t_comm == C_A_WHO_UR:
                 self.__show_who_are(msg)
-            elif t_comm == C_R_ADD or t_comm == C_R_KICK:
+            elif t_comm == C_R_ACC or t_comm == C_R_KICK:
                 self.__do_reg(msg)
             elif t_comm == C_R_NEXT:
                 self.__show_next_reg(msg)
@@ -120,22 +126,25 @@ class Tele_Bot(telebot.TeleBot):
     def __show_reg_m(self):
         self.send_message(ADMIN_ID, TO_RULE, reply_markup=REG_MARK)
 
+    def __show_kick_m(self):
+        self.send_message(ADMIN_ID, TO_RULE, reply_markup=KICK_MARK)
+
     def __show_bot_started(self):
         msg = BOT_START.format(ver.V_FULL)
         self.send_message(ADMIN_ID, msg)
         self.send_message(ADMIN_ID, TO_RULE, reply_markup=GET_MARK)
 
-        for i in range(0, self.__model.get_viewers_len()):
-            (s_id, s_name) = self.__model.get_viewer_by_i(i)
-            self.send_message(s_id, msg)
-            self.send_message(s_id, TO_RULE, reply_markup=GET_MARK)
+        # for i in range(0, self.__model.get_viewers_len()):
+        #     (s_id, s_name) = self.__model.get_viewer_by_i(i)
+        #     self.send_message(s_id, msg)
+        #     self.send_message(s_id, TO_RULE, reply_markup=GET_MARK)
 
     def __show_bot_stopped(self):
         self.send_message(ADMIN_ID, BOT_STOP)
 
-        for i in range(0, self.__model.get_viewers_len()):
-            (s_id, s_name) = self.__model.get_viewer_by_i(i)
-            self.send_message(s_id, BOT_STOP)
+        # for i in range(0, self.__model.get_viewers_len()):
+        #     (s_id, s_name) = self.__model.get_viewer_by_i(i)
+        #     self.send_message(s_id, BOT_STOP)
 
     @hi_protect
     def __show_next_reg(self, _):
@@ -151,7 +160,7 @@ class Tele_Bot(telebot.TeleBot):
         if c_len <= 0:
             self.__def_reg()
             self.send_message(ADMIN_ID, "No more users")
-            self.__show_admin_m()
+            self.__show_admin_m(_)
 
             return
 
@@ -192,7 +201,11 @@ class Tele_Bot(telebot.TeleBot):
 
         if pred:
             self.__reg_state = t_comm
-            self.__show_reg_m()
+
+            if t_comm == C_A_WHO_ARE:
+                self.__show_kick_m()
+            else:
+                self.__show_reg_m()
             self.__show_next_reg(msg)
 
     def __show_who_are_viewer(self):
@@ -200,7 +213,7 @@ class Tele_Bot(telebot.TeleBot):
             self.send_message(ADMIN_ID, "There are viewers:\n{:s}".format(self.__model.get_viewers_list_str()))
             return True
 
-        self.send_message(ADMIN_ID, "Nobody")
+        self.send_message(ADMIN_ID, NOBODY)
         return False
 
     def __show_who_are_w_reg(self):
@@ -208,7 +221,7 @@ class Tele_Bot(telebot.TeleBot):
             self.send_message(ADMIN_ID, "There are want's to reg:\n{:s}".format(self.__model.get_reg_req_list_str()))
             return True
 
-        self.send_message(ADMIN_ID, "Nobody")
+        self.send_message(ADMIN_ID, NOBODY)
         return False
 
     def __show_who_are_w_ureg(self):
@@ -216,7 +229,7 @@ class Tele_Bot(telebot.TeleBot):
             self.send_message(ADMIN_ID, "There are want's to unreg:\n{:s}".format(self.__model.get_ureg_req_list_str()))
             return True
 
-        self.send_message(ADMIN_ID, "Nobody")
+        self.send_message(ADMIN_ID, NOBODY)
         return False
 
     @hi_protect
@@ -225,7 +238,7 @@ class Tele_Bot(telebot.TeleBot):
 
         pred = False
 
-        if t_comm == C_R_ADD:
+        if t_comm == C_R_ACC:
             pred = self.__do_add()
         elif t_comm == C_R_KICK:
             pred = self.__do_kick()
@@ -234,7 +247,7 @@ class Tele_Bot(telebot.TeleBot):
             self.__show_next_reg(msg)
 
     def __add_req_reg(self, msg):
-        t_id = msg.chat.id
+        t_id = str(msg.chat.id)
         t_name = msg.chat.first_name
 
         self.__model.add_reg_req(t_id, t_name)
@@ -243,7 +256,7 @@ class Tele_Bot(telebot.TeleBot):
 
     @mid_protect
     def __add_req_ureg(self, msg):
-        t_id = msg.chat.id
+        t_id =str(msg.chat.id)
         t_name = msg.chat.first_name
 
         self.__model.add_ureg_req(t_id, t_name)
@@ -270,15 +283,24 @@ class Tele_Bot(telebot.TeleBot):
         if not self.__reg_item is None:
             (k_id, k_name) = self.__reg_item
 
-            self.__model.kick_viewer(k_id)
-            self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was kicked from viewers".format(k_id,
-                                                                                              k_name))
+            if self.__reg_state == C_A_WHO_R:
+                self.__model.kick_reg_req(k_id)
+                self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was kicked from register requests".format(k_id,
+                                                                                                            k_name))
+            elif self.__reg_state == C_A_WHO_UR:
+                self.__model.kick_ureg_req(k_id)
+                self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was kicked from unregister requests".format(k_id,
+                                                                                                              k_name))
+            elif self.__reg_state == C_A_WHO_ARE:
+                self.__model.kick_viewer(k_id)
+                self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was kicked from viewers".format(k_id,
+                                                                                                  k_name))
             return True
 
         self.send_message(ADMIN_ID, "Bad try kick viewer")
         return False
 
-    def start_loop(self):
+    def __start_loop(self):
         self.__show_bot_started()
 
         offset = None
@@ -291,3 +313,6 @@ class Tele_Bot(telebot.TeleBot):
                 self.process_new_updates(updates)
 
         self.__show_bot_stopped()
+
+    def do_work(self):
+        self.__start_loop()

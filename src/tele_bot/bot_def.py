@@ -9,6 +9,7 @@ UPD_TMT                 = 1
 BOT_START               = "Бусинко-наблюдатель({:s}) запущен"
 BOT_STOP                = "Бусинко-наблюдатель остановлен"
 TO_RULE                 = "Командуй"
+NOBODY                  = "Empty"
 
 # commands
 C_START                 = 'start'
@@ -24,15 +25,16 @@ C_LAST_F                = 'Последний кадр'
 C_UPD                   = 'Обновить'
 C_GET                   = 'Меню'
 
-C_A_RES                 = 'restart'
-C_A_STOP                = 'stop'
-C_A_WHO_R               = 'who_reg'
-C_A_WHO_UR              = 'who_ureg'
-C_A_WHO_ARE             = 'who_are'
+C_A_RES                 = 'Restart'
+C_A_STOP                = 'Stop'
+C_A_WHO_R               = 'Reg list'
+C_A_WHO_UR              = 'Unreg list'
+C_A_WHO_ARE             = 'Viewers'
 
-C_R_ADD                 = 'add'
-C_R_NEXT                = 'next'
-C_R_KICK                = 'kick'
+C_R_ACC                 = 'Accept'
+C_R_DECL                = 'Decl'
+C_R_NEXT                = 'Next'
+C_R_KICK                = 'Kick'
 
 # keyboards
 GET_M                   = [[C_GET]]
@@ -49,15 +51,22 @@ ADMIN_MARK = telebot.types.ReplyKeyboardMarkup()
 for row in ADMIN_M:
     ADMIN_MARK.row(*row)
 
-REG_M                   = [[C_R_ADD, C_R_KICK],
+REG_M                   = [[C_R_ACC, C_R_KICK],
                            [C_R_NEXT],
-                           [C_BACK]]
+                           [C_GET]]
 REG_MARK = telebot.types.ReplyKeyboardMarkup()
 for row in REG_M:
     REG_MARK.row(*row)
 
+KICK_M = [[C_R_KICK],
+         [C_R_NEXT],
+         [C_GET]]
+KICK_MARK = telebot.types.ReplyKeyboardMarkup()
+for row in KICK_M:
+    KICK_MARK.row(*row)
+
 CTRL_M                  = [[C_LAST_F],
-                           [C_BACK]]
+                           [C_GET]]
 CTRL_MARK = telebot.types.ReplyKeyboardMarkup()
 for row in CTRL_M:
     CTRL_MARK.row(*row)

@@ -60,10 +60,7 @@ if __name__ == '__main__':
     user_mod = UserModel(os.path.join(os.getcwd(), cfg.INI_PATH))
     tele_bot = Tele_Bot(user_mod)
 
-    tele_bot.start_loop()
-
-    # c_b.set_model(user_mod)
-    # c_b.start_listen()
+    tele_bot.do_work()
 
     if cfg.MULTITHREAD:
         log_out_deffered()

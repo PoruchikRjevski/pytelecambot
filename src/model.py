@@ -37,7 +37,7 @@ class UserModel:
 
             self.__bd_dmn.accept_changes()
 
-            del self.__reg_req[t_id]
+            self.kick_reg_req(t_id)
 
     def kick_viewer(self, t_id):
         if t_id in self.__viewers.keys():
@@ -45,8 +45,7 @@ class UserModel:
 
             self.__bd_dmn.accept_changes()
 
-            if t_id in self.__ureg_req.keys():
-                del self.__ureg_req[t_id]
+            self.kick_ureg_req(t_id)
 
     def add_reg_req(self, t_id, t_name):
         self.__reg_req[t_id] = t_name
@@ -65,6 +64,10 @@ class UserModel:
 
         return '', ''
 
+    def kick_reg_req(self, t_id):
+        if t_id in self.__reg_req.keys():
+            del self.__reg_req[t_id]
+
     def add_ureg_req(self, t_id, t_name):
         self.__ureg_req[t_id] = t_name
 
@@ -82,5 +85,8 @@ class UserModel:
 
         return '', ''
 
+    def kick_ureg_req(self, t_id):
+        if t_id in self.__ureg_req.keys():
+            del self.__ureg_req[t_id]
 
 
