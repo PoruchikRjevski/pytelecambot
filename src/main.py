@@ -4,11 +4,10 @@ import os
 
 import config as cfg
 import version as ver
-import tele_bot.bot as c_b
+from tele_bot.bot import *
 from logger import *
 from git_man import *
 from model import *
-import base_daemon.base_daemon as b_d
 # from sql_daemon import *
 
 # bot = telebot.TeleBot(c_v.token)
@@ -59,6 +58,10 @@ if __name__ == '__main__':
     update_ver()
 
     user_mod = UserModel(os.path.join(os.getcwd(), cfg.INI_PATH))
+    tele_bot = Tele_Bot(user_mod)
+
+    tele_bot.start_loop()
+
     # c_b.set_model(user_mod)
     # c_b.start_listen()
 

@@ -23,3 +23,7 @@ class BD_INI_DMN:
     def accept_changes(self):
         with open(self.__bd_path, 'w') as cfg_f:
             self.__cfg.write(cfg_f)
+
+    def get_viewers(self):
+        if self.__cfg.has_section(VIEWERS_BLK):
+            return self.__cfg._sections[VIEWERS_BLK]

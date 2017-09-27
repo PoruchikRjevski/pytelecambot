@@ -16,8 +16,16 @@ class UserModel:
     def get_viewers_len(self):
         return len(self.__viewers)
 
+    def get_viewers_list_str(self):
+        return "\n".join(["{:s} : {:s}".format(str(k), name) for (k, name) in self.__viewers.items()])
+
     def get_viewer_by_i(self, t_i):
-        return list(self.__viewers.items())[t_i]
+        tmp_l = list(self.__viewers.items())
+
+        if len(tmp_l) > t_i:
+            return tmp_l[t_i]
+
+        return '', ''
 
     def is_viewer(self, t_id):
         return t_id in self.__viewers.keys()
@@ -46,8 +54,16 @@ class UserModel:
     def get_reg_req_len(self):
         return len(self.__reg_req)
 
+    def get_reg_req_list_str(self):
+        return "\n".join(["{:s} : {:s}".format(str(k), name) for (k, name) in self.__reg_req.items()])
+
     def get_reg_req_by_i(self, t_i):
-        return list(self.__reg_req.items())[t_i]
+        tmp_l = list(self.__reg_req.items())
+
+        if len(tmp_l) > t_i:
+            return tmp_l[t_i]
+
+        return '', ''
 
     def add_ureg_req(self, t_id, t_name):
         self.__ureg_req[t_id] = t_name
@@ -55,8 +71,16 @@ class UserModel:
     def get_ureg_req_len(self):
         return len(self.__ureg_req)
 
+    def get_ureg_req_list_str(self):
+        return "\n".join(["{:s} : {:s}".format(str(k), name) for (k, name) in self.__ureg_req.items()])
+
     def get_ureg_req_by_i(self, t_i):
-        return list(self.__ureg_req.items())[t_i]
+        tmp_l = list(self.__ureg_req.items())
+
+        if len(tmp_l) > t_i:
+            return tmp_l[t_i]
+
+        return '', ''
 
 
 
