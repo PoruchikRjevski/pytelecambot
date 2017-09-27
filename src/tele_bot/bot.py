@@ -25,12 +25,6 @@ class Tele_Bot(telebot.TeleBot):
         self.__reg_pos = None
         self.__reg_item = None
 
-        # test
-        self.__model.add_reg_req("123asd", "asd")
-        self.__model.add_reg_req("123qwe", "qwe")
-
-        # test
-
         @bot.message_handler(commands=[C_START, C_HELP])
         def handle_start(msg):
             self.__show_m(msg)
@@ -239,7 +233,7 @@ class Tele_Bot(telebot.TeleBot):
         pred = False
 
         if t_comm == C_R_ACC:
-            pred = self.__do_add()
+            pred = self.__do_acc()
         elif t_comm == C_R_KICK:
             pred = self.__do_kick()
 
@@ -267,13 +261,19 @@ class Tele_Bot(telebot.TeleBot):
     def __get_last_frame(self, msg):
         self.send_photo(msg.chat.id, photo=open(os.path.join(os.getcwd(), cfg.LAST_D_P, cfg.LAST_F), 'rb'))
 
-    def __do_add(self):
+    def __do_acc(self):
         if not self.__reg_item is None:
             (a_id, a_name) = self.__reg_item
 
-            self.__model.add_viewer(a_id)
-            self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was added to viewers".format(a_id,
-                                                                                           a_name))
+            if self.__reg_state == C_A_WHO_R:
+                self.__model.add_viewer(a_id)
+                self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was added to viewers".format(a_id,
+                                                                                               a_name))
+            elif self.__reg_state == C_A_WHO_UR:
+                self.__model.kick_viewer(a_id)
+                self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was kicked from viewers".format(a_id,
+                                                                                                  a_name))
+
             return True
 
         self.send_message(ADMIN_ID, "Bad try add viewer")
