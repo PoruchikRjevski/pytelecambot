@@ -1,6 +1,7 @@
 import os
 import time
 
+import numpy as np
 import cv2
 
 import config as cfg
@@ -40,12 +41,13 @@ class Observer:
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     def __main_loop(self):
-        frame = self.__get_frame
+        frame = self.__get_frame()
 
-        frame = self.__filter_gray(frame)
+        # if frame is None:
 
-        cv2.imWrite(os.path.join(os.getcwd(), cfg.LAST_D_P, cfg.LAST_F),
-                    frame)
+        # frame = self.__filter_gray(frame)
+
+        cv2.imwrite(cfg.FULL_P, frame)
 
         time.sleep(OBSERVING_TMT)
 
@@ -53,3 +55,5 @@ class Observer:
         self.__init_camera()
 
         self.__main_loop()
+
+        self.__deinit_camera()

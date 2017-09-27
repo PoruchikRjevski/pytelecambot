@@ -24,6 +24,8 @@ class Tele_Bot(telebot.TeleBot):
 
         self.__alert_q = queue.Queue()
 
+        self.__reset_app = None
+
         self.__reg_state = ''
         self.__reg_pos = None
         self.__reg_item = None
@@ -86,7 +88,7 @@ class Tele_Bot(telebot.TeleBot):
     @hi_protect
     def __restart_bot(self, msg):
         self.send_message(ADMIN_ID, "Rebooting...")
-        os.execl(sys.executable, sys.executable, *sys.argv)
+        self.__reset_app()
 
     @hi_protect
     def __stop_bot(self, msg):
@@ -272,7 +274,9 @@ class Tele_Bot(telebot.TeleBot):
 
     @hm_protect
     def __get_last_frame(self, msg):
-        self.send_photo(msg.chat.id, photo=open(os.path.join(os.getcwd(), cfg.LAST_D_P, cfg.LAST_F), 'rb'))
+
+        if os.path.exists(cfg.FULL_P):
+            self.send_photo(msg.chat.id, photo=open(cfg.FULL_P, 'rb'))
 
     def __do_acc(self):
         if not self.__reg_item is None:
@@ -335,3 +339,9 @@ class Tele_Bot(telebot.TeleBot):
 
     def set_queue(self, a_queue):
         self.__alert_q = a_queue
+
+    def set_reset_f(self, func):
+        self.__reset_app = func
+
+    def stop_bot(self):
+        self.__stop_f = True

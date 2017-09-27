@@ -1,6 +1,7 @@
 #!/usr/bin/sudo python3
 
 import os
+import sys
 import time
 import threading
 import queue
@@ -22,6 +23,10 @@ def update_ver():
                                               ver.V_COMM,
                                               ver.V_BRANCH)
 
+
+def reset_app():
+    os.execl(sys.executable, sys.executable, *sys.argv)
+
 if __name__ == '__main__':
     # preprocess
     log_set_mt(cfg.MULTITHREAD)
@@ -33,27 +38,34 @@ if __name__ == '__main__':
     # create essence
     alert_queue = queue.Queue()
 
+    cfg.FULL_P = os.path.join(os.getcwd(), cfg.LAST_D_P, cfg.LAST_F)
+
     user_mod = UserModel(os.path.join(os.getcwd(), cfg.INI_PATH))
     tele_bot = Tele_Bot(user_mod)
+    tele_bot.set_reset_f(reset_app)
     tele_bot.set_queue(alert_queue)
-    # observ = Observer()
+    observ = Observer()
 
     # create threads
     tb_t = threading.Thread(target=tele_bot.do_work)
-    # obs_t = threading.Thread(target=observ.do_work())
+    obs_t = threading.Thread(target=observ.do_work)
     # tele_bot.do_work()
 
     # start work
     tb_t.start()
-    # obs_t.start()
+    obs_t.start()
 
     # test
+
     # time.sleep(5)
-    alert_queue.put(open(os.path.join(os.getcwd(), cfg.LAST_D_P, cfg.LAST_F_T), 'rb'))
+    # tele_bot.stop_bot()
+    # time.sleep(5)
+    # alert_queue.put(open(os.path.join(os.getcwd(), cfg.LAST_D_P, cfg.LAST_F_T), 'rb'))
     # test
 
     # wait threads
     tb_t.join()
+    obs_t.join()
 
     # postprocess
     if cfg.MULTITHREAD:
