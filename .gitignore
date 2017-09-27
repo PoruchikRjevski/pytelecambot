@@ -1,5 +1,6 @@
 __pycache__/
 .idea/workspace.xml
 LOG/
+OUT/
 c_v
 telebot

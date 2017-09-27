@@ -34,8 +34,6 @@ class Tele_Bot(telebot.TeleBot):
 
             if t_comm == C_A_RES:
                 self.__restart_bot(msg)
-            elif t_comm == C_GET:
-                self.__show_m(msg)
             elif t_comm == C_A_STOP:
                 self.__stop_bot(msg)
             elif t_comm == C_CTRL:
@@ -46,7 +44,13 @@ class Tele_Bot(telebot.TeleBot):
                 self.__do_reg(msg)
             elif t_comm == C_R_NEXT:
                 self.__show_next_reg(msg)
-            elif t_comm == C_BACK or t_comm == C_UPD:
+            elif t_comm == C_U_REG:
+                self.__add_req_reg(msg)
+            elif t_comm == C_V_UREG:
+                self.__add_req_ureg(msg)
+            elif t_comm == C_LAST_F:
+                self.__get_last_frame(msg)
+            elif t_comm == C_GET or t_comm == C_BACK or t_comm == C_UPD:
                 self.__show_m(msg)
 
     def __def_reg(self):
@@ -118,11 +122,8 @@ class Tele_Bot(telebot.TeleBot):
     def __show_get_m(self):
         self.send_message(ADMIN_ID, "You rules:", reply_markup=GET_MARK)
 
-        len_v = self.__model.get_viewers_len()
-
-        for i in range(0, len_v):
+        for i in range(0, self.__model.get_viewers_len()):
             (s_id, s_name) = self.__model.get_viewer_by_i(i)
-
             self.send_message(s_id, "You rules:", reply_markup=GET_MARK)
 
     @hi_protect
@@ -221,6 +222,27 @@ class Tele_Bot(telebot.TeleBot):
         if pred:
             self.__show_next_reg(msg)
 
+    def __add_req_reg(self, msg):
+        t_id = msg.chat.id
+        t_name = msg.chat.first_name
+
+        self.__model.add_reg_req(t_id, t_name)
+        self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" want to register".format(t_id,
+                                                                                   t_name))
+
+    @mid_protect
+    def __add_req_ureg(self, msg):
+        t_id = msg.chat.id
+        t_name = msg.chat.first_name
+
+        self.__model.add_ureg_req(t_id, t_name)
+        self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" want to unregister".format(t_id,
+                                                                                     t_name))
+
+    @hm_protect
+    def __get_last_frame(self, msg):
+        self.send_photo(msg.chat.id, photo=open(os.path.join(os.getcwd(), cfg.LAST_D_P, cfg.LAST_F), 'rb'))
+
     def __do_add(self):
         if not self.__reg_item is None:
             (a_id, a_name) = self.__reg_item
@@ -251,7 +273,6 @@ class Tele_Bot(telebot.TeleBot):
         self.__show_get_m()
 
         offset = None
-
         while not self.__stop_f:
             updates = self.get_updates(offset, timeout=UPD_TMT)
 
