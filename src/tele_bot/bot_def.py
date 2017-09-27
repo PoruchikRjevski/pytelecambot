@@ -17,17 +17,27 @@ MOVE_A = 'MOVE'
 
 ADMIN_ID = 74810100
 
+C_START         = 'start'
+C_HELP          = 'help'
 
-A_D_REG     = 'ADD'
-A_D_UREG    = 'KICK'
-A_D_WHO_REG = 'WHO_W'
-A_D_WHO_ARE = 'WHO_A'
-A_D_CONRTOL = 'CONTROL'
 
-ADMIN_M             = [A_D_REG, A_D_UREG, A_D_WHO_REG, A_D_WHO_ARE]
 
+A_D_ADD         = 'ADD'
+A_D_KICK        = 'KICK'
+A_D_WHO_REG     = 'WHO_W'
+A_D_WHO_UREG    = 'WHO_U'
+A_D_WHO_ARE     = 'WHO_A'
+A_D_CONRTOL     = 'CONTROL'
+
+ADMIN_M             = [A_D_ADD, A_D_KICK, A_D_WHO_REG, A_D_WHO_ARE]
+
+
+NEXT_M      = 'NEXT'
+UPD_M       = 'UPD_M'
 
 N_R_REG     = 'REGISTER'
+
+BACK_M      = 'BACK'
 
 
 R_UNREG     = 'UNREGISTER'
