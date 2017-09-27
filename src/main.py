@@ -7,7 +7,8 @@ import version as ver
 import tele_bot.bot as c_b
 from logger import *
 from git_man import *
-from base_daemon import *
+from model import *
+import base_daemon.base_daemon as b_d
 # from sql_daemon import *
 
 # bot = telebot.TeleBot(c_v.token)
@@ -58,9 +59,8 @@ if __name__ == '__main__':
     update_ver()
 
     user_mod = UserModel(os.path.join(os.getcwd(), cfg.INI_PATH))
-
-    c_b.set_model(user_mod)
-    c_b.start_listen()
+    # c_b.set_model(user_mod)
+    # c_b.start_listen()
 
     if cfg.MULTITHREAD:
         log_out_deffered()

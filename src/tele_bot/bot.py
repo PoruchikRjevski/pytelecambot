@@ -1,10 +1,9 @@
 import queue
+
 import telebot
 
 import config as cfg
 from tele_bot.bot_def import *
-import version as ver
-import base_daemon.model
 
 __all__ = ['start_listen']
 
@@ -196,7 +195,7 @@ def show_control_m(chat_id):
 
 def unregister_request(id, name):
     global user_model
-    user_model.add_unreg_req(id, name)
+    user_model.add_ureg_req(id, name)
     alert_want_unreg()
 
 

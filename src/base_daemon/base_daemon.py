@@ -4,62 +4,22 @@ import configparser
 from logger import *
 from base_daemon.base_defs import *
 
-__all__ = ['init_base', 'get_viewers', 'add_viewer', 'rem_viewer']
-
-DB_PATH = ""
-config_h = None
+__all__ = ['BD_INI_DMN']
 
 
-def init_base():
-    global config_h
-    global DB_PATH
+class BD_INI_DMN:
+    def __init__(self, c_path):
+        self.__bd_path = c_path
+        self.__cfg = configparser.ConfigParser()
 
-    print("path: {:s}".format(DB_PATH))
+        self.__init_bd()
 
-    config_h = configparser.ConfigParser()
-    config_h.read(DB_PATH)
+    def __set_block(self, t_block, t_dict):
+        self.__cfg[t_block] = t_dict
 
+    def __init_bd(self):
+        self.__cfg.read(self.__bd_path)
 
-def get_viewers():
-    global config_h
-    global DB_PATH
-
-    if config_h.has_section(VIEWERS_BLK):
-        return config_h._sections[VIEWERS_BLK]
-    return {}
-
-
-def write_cfg():
-    global config_h
-    global DB_PATH
-
-    with open(DB_PATH, 'w') as cfg_f:
-        config_h.write(cfg_f)
-
-
-def add_viewer(t_id, t_name):
-    global config_h
-    global DB_PATH
-
-    viewers = {}
-
-    if config_h.has_section(VIEWERS_BLK):
-        viewers = config_h._sections[VIEWERS_BLK]
-
-    viewers[t_id] = t_name
-    config_h[VIEWERS_BLK] = viewers
-
-    write_cfg()
-
-
-def rem_viewer(t_id):
-    global config_h
-    global DB_PATH
-
-    if config_h.has_section(VIEWERS_BLK):
-        viewers = config_h._sections[VIEWERS_BLK]
-
-        if t_id in viewers.keys():
-            del viewers[t_id]
-            config_h[VIEWERS_BLK] = viewers
-            write_cfg()
+    def accept_changes(self):
+        with open(self.__bd_path, 'w') as cfg_f:
+            self.__cfg.write(cfg_f)
