@@ -17,6 +17,7 @@ class Camera:
         self.__work_f = work_f
 
         self.__last_frame = None
+        self.__last_frame_p = ""
 
         self.__handle_cam = None
         self.__video_writer = None
@@ -151,14 +152,14 @@ class Camera:
 
             self.__last_frame = frame
 
-            path = self.__write_frame(frame)
+            self.__last_frame_p = self.__write_frame(frame)
 
             if once:
                 self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE,
                                                   cmn.MOVE_ALERT.format(str(self.__c_id),
                                                                         self.__c_name,
                                                                         self.__time_stamp),
-                                                  path))
+                                                  self.__last_frame_p))
                 once = False
             else:
                 time.sleep(OBSERVING_TMT)
@@ -200,4 +201,4 @@ class Camera:
 
     @property
     def last_frame(self):
-        return self.__last_frame
+        return self.__last_frame_p

@@ -111,6 +111,9 @@ class UserModel:
 
         return None
 
+    def get_camera_last_f(self, t_i):
+        return self.get_camera_by_i(t_i).last_frame
+
     def is_alerts_exists(self):
         return True if self.__alerts else False
 

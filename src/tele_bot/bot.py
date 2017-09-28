@@ -66,12 +66,12 @@ class Tele_Bot(telebot.TeleBot):
                 self.__add_req_reg(msg)
             elif t_comm == C_V_UREG:
                 self.__add_req_ureg(msg)
-            elif t_comm == C_LAST_F:
-                self.__get_last_frame(msg)
             elif t_comm == C_MENU or t_comm == C_BACK or t_comm == C_UPD:
                 self.__show_m(msg)
             elif t_comm == C_C_ON or t_comm == C_C_OFF:
                 self.__cam_switch_state(msg)
+            elif t_comm == C_C_LAST:
+                self.__get_last_frame(msg)
             elif t_comm in CAM_M:
                 self.__show_cam_m(msg)
 
@@ -326,9 +326,9 @@ class Tele_Bot(telebot.TeleBot):
 
     @hm_protect
     def __get_last_frame(self, msg):
-
-        if os.path.exists(cmn.FULL_P):
-            self.send_photo(msg.chat.id, photo=open(cmn.FULL_P, 'rb'))
+        last_f_p = self.__model.get_camera_last_f(self.__cam_sel_id)
+        if os.path.exists(last_f_p):
+            self.send_photo(msg.chat.id, photo=open(last_f_p, 'rb'))
 
     def __do_acc(self):
         if not self.__reg_item is None:

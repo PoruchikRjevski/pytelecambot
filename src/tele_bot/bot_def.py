@@ -21,7 +21,6 @@ C_U_REG                 = 'Зарегистрироваться'
 
 C_CAMS                  = 'Камеры'
 C_BACK                  = 'Назад'
-C_LAST_F                = 'Последний кадр'
 C_UPD                   = 'Обновить меню'
 C_MENU                   = 'Меню'
 
@@ -69,11 +68,6 @@ KICK_MARK = telebot.types.ReplyKeyboardMarkup()
 for row in KICK_M:
     KICK_MARK.row(*row)
 
-CTRL_M                  = [[C_LAST_F],
-                           [C_MENU]]
-CTRL_MARK = telebot.types.ReplyKeyboardMarkup()
-for row in CTRL_M:
-    CTRL_MARK.row(*row)
 
 VIEWERS_M               = [[C_V_UREG],
                            [C_CAMS],
