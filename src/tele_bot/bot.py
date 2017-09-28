@@ -9,6 +9,7 @@ import telebot.types
 import config as cfg
 from tele_bot.bot_def import *
 import version as ver
+from logger import *
 
 __all__ = ['Tele_Bot']
 
@@ -32,11 +33,18 @@ class Tele_Bot(telebot.TeleBot):
 
         @bot.message_handler(commands=[C_START, C_HELP])
         def handle_start(msg):
+            out_log("Rx \"{:s}\" by {:s} : {:s}".format(msg.text,
+                                                        str(msg.chat.id),
+                                                        msg.chat.first_name))
             self.__show_m(msg)
 
         @bot.message_handler(content_types=["text"])
         def handle_text(msg):
             t_comm = msg.text
+
+            out_log("Rx \"{:s}\" by {:s} : {:s}".format(t_comm,
+                                                        str(msg.chat.id),
+                                                        msg.chat.first_name))
 
             if t_comm == C_A_RES:
                 self.__restart_bot(msg)
@@ -138,12 +146,16 @@ class Tele_Bot(telebot.TeleBot):
         #     self.send_message(s_id, msg)
         #     self.send_message(s_id, TO_RULE, reply_markup=GET_MARK)
 
+        out_log(msg)
+
     def __show_bot_stopped(self):
         self.send_message(ADMIN_ID, BOT_STOP)
 
         # for i in range(0, self.__model.get_viewers_len()):
         #     (s_id, s_name) = self.__model.get_viewer_by_i(i)
         #     self.send_message(s_id, BOT_STOP)
+
+        out_log(BOT_STOP)
 
     @hi_protect
     def __show_next_reg(self, _):
@@ -236,6 +248,7 @@ class Tele_Bot(telebot.TeleBot):
             return
 
         self.send_photo(ADMIN_ID, photo=self.__alert_q.get())
+        out_log("Move alert")
 
         # for i in range(0, self.__model.get_viewers_len()):
         #     (s_id, s_name) = self.__model.get_viewer_by_i(i)
@@ -317,19 +330,40 @@ class Tele_Bot(telebot.TeleBot):
         self.send_message(ADMIN_ID, "Bad try kick viewer")
         return False
 
+    def __get_updates(self):
+        total = 0
+        updates = self.get_updates(offset=self.last_update_id, timeout=UPD_TMT)
+        while updates:
+            total += len(updates)
+            for update in updates:
+                if update.update_id > self.last_update_id:
+                    self.last_update_id = update.update_id
+
+            self.process_new_updates(updates)
+            updates = self.get_updates(offset=self.last_update_id + 1, timeout=UPD_TMT)
+        return total
+
+
+    def __skip_updates_m(self):
+        total = 0
+        updates = self.get_updates(offset=self.last_update_id, timeout=UPD_TMT)
+        while updates:
+            total += len(updates)
+            for update in updates:
+                if update.update_id > self.last_update_id:
+                    self.last_update_id = update.update_id
+            updates = self.get_updates(offset=self.last_update_id + 1, timeout=UPD_TMT)
+        return total
+
     def __main_loop(self):
+        out_log("skipped: {:s}".format(str(self.__skip_updates_m())))
         self.__show_bot_started()
 
-        offset = None
-
         while not self.__stop_f:
-            updates = self.get_updates(offset, timeout=UPD_TMT)
-
-            # process msgs
-            if len(updates) > 0:
-                offset = updates[-1].update_id + 1
-                self.process_new_updates(updates)
-
+            # self.__get_updates_ex()
+            upds_num = self.__get_updates()
+            if upds_num:
+                out_log("rx updates: {:s}".format(str(upds_num)))
             self.__show_alert()
 
         self.__show_bot_stopped()

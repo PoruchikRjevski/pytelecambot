@@ -13,6 +13,7 @@ from logger import *
 from git_man import *
 from model import *
 from observer import *
+from time_checker import *
 # from sql_daemon import *
 
 
@@ -48,7 +49,7 @@ if __name__ == '__main__':
 
     # create threads
     tb_t = threading.Thread(target=tele_bot.do_work)
-    obs_t = threading.Thread(target=observ.do_work)
+    obs_t = threading.Thread(target=observ.do_work_test)
     # tele_bot.do_work()
 
     # start work

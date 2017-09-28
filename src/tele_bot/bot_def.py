@@ -3,7 +3,7 @@ import telebot.types
 # main defs
 ADMIN_ID                = '74810100' # 74810100
 TOKEN                   = '364842219:AAEl03t9yKk0qxz0afTWDLwVaPRIzWpYRZc'
-UPD_TMT                 = 2
+UPD_TMT                 = 1
 
 # messages
 BOT_START               = "Бусинко-наблюдатель({:s}) запущен"
