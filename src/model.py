@@ -2,7 +2,8 @@ import collections
 import queue
 
 import base_daemon.base_daemon as b_d
-import config as cfg
+from observer.camera import *
+import common as cfg
 
 __all__ = ['UserModel', 'Camera']
 
@@ -102,6 +103,9 @@ class UserModel:
         return len(self.__cameras)
 
     def camera_switch_state(self, t_i, state):
+        self.get_camera_by_i(t_i).state = state
+
+        # move add alert to Camera
         al_msg = ""
         if state:
             al_msg = cfg.CAM_STARTED.format(self.get_camera_by_i(t_i).cam_name,
@@ -123,34 +127,6 @@ class UserModel:
 
     def get_alert(self):
         return self.__alerts.pop()
-
-
-class Camera:
-    def __init__(self, c_id, c_name, work_f=True):
-        self.__c_id = c_id
-        self.__c_name = c_name
-        self.__work_f = work_f
-
-    @property
-    def cam_id(self):
-        return self.__c_id
-
-    @property
-    def cam_name(self):
-        return self.__c_name
-
-    @property
-    def status(self):
-        return self.__work_f
-
-    @status.setter
-    def status(self, state):
-        print("cam {:s} state: {:s}".format(self.__c_name,
-                                            str(state)))
-        if state:
-            pass
-        else:
-            pass
 
 
 class Alert:

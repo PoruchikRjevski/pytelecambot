@@ -1,3 +1,6 @@
+import os
+import sys
+
 # PATHES
 LOG_P           = "../LOG/"
 OUT_P           = "../OUT/"
@@ -23,3 +26,13 @@ T_CAM_SW                 = 1
 
 CAM_STOPPED             = "Камера {:s} выключена"
 CAM_STARTED             = "Камера {:s} включена"
+
+
+# common functions
+def reset_app():
+    os.execl(sys.executable, sys.executable, *sys.argv)
+
+
+def make_dir(dir):
+    if not os.path.exists(dir):
+        os.mkdir(dir)

@@ -6,7 +6,7 @@ import queue
 import telebot
 import telebot.types
 
-import config as cfg
+import common as cmn
 from tele_bot.bot_def import *
 import version as ver
 from logger import *
@@ -24,8 +24,6 @@ class Tele_Bot(telebot.TeleBot):
         self.__model = u_model
 
         self.__alert_q = queue.Queue()
-
-        self.__reset_app = None
 
         self.__reg_state = ''
         self.__reg_pos = None
@@ -116,7 +114,7 @@ class Tele_Bot(telebot.TeleBot):
     @hi_protect
     def __restart_bot(self, msg):
         self.send_message(ADMIN_ID, "Rebooting...")
-        self.__reset_app()
+        cmn.reset_app()
 
     @hi_protect
     def __stop_bot(self, msg):
@@ -163,11 +161,11 @@ class Tele_Bot(telebot.TeleBot):
     @hm_protect
     def __show_cam_m(self, msg):
         self.__cam_sel_id = CAM_M.index(msg.text)
-        self.__switch_sel_cam_state(self.__model.get_camera_by_i(self.__cam_sel_id))
+        self.__switch_sel_cam_state(self.__model.get_camera_by_i(self.__cam_sel_id).state)
 
+        self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_CTRL_MARK)
         self.send_message(msg.chat.id, "Камера \"{:s}\" сейчас {:s}".format(msg.text,
                                                                             self.__cam_sel_stat_str))
-        self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_CTRL_MARK)
 
     def __show_bot_started(self):
         msg = BOT_START.format(ver.V_FULL)
@@ -281,7 +279,7 @@ class Tele_Bot(telebot.TeleBot):
             alert = self.__model.get_alert()
 
             self.send_message(ADMIN_ID, alert.msg)
-            if alert.type == cfg.T_CAM_MOVE:
+            if alert.type == cmn.T_CAM_MOVE:
                 self.send_photo(ADMIN_ID, photo=alert.type)
                 out_log(MOVE_ALERT)
 
@@ -329,8 +327,8 @@ class Tele_Bot(telebot.TeleBot):
     @hm_protect
     def __get_last_frame(self, msg):
 
-        if os.path.exists(cfg.FULL_P):
-            self.send_photo(msg.chat.id, photo=open(cfg.FULL_P, 'rb'))
+        if os.path.exists(cmn.FULL_P):
+            self.send_photo(msg.chat.id, photo=open(cmn.FULL_P, 'rb'))
 
     def __do_acc(self):
         if not self.__reg_item is None:
@@ -414,9 +412,6 @@ class Tele_Bot(telebot.TeleBot):
 
     def set_queue(self, a_queue):
         self.__alert_q = a_queue
-
-    def set_reset_f(self, func):
-        self.__reset_app = func
 
     def stop_bot(self):
         self.__stop_f = True

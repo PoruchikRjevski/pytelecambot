@@ -1,1 +1,1 @@
-from observer.observer import *
+from observer.camera import *

@@ -2,5 +2,7 @@ __pycache__/
 .idea/workspace.xml
 LOG/
 OUT/
+!L_F/im_0.jpg
+!im_1.jpg
 c_v
 telebot
