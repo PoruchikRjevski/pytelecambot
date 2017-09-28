@@ -1,8 +1,10 @@
 import collections
+import queue
 
 import base_daemon.base_daemon as b_d
+import config as cfg
 
-__all__ = ['UserModel']
+__all__ = ['UserModel', 'Camera']
 
 class UserModel:
     def __init__(self, path):
@@ -12,6 +14,9 @@ class UserModel:
 
         self.__bd_dmn = b_d.BD_INI_DMN(path)
         self.__viewers = self.__bd_dmn.get_viewers()
+        self.__cameras = []
+
+        self.__alerts = queue.deque()
 
     def get_viewers_len(self):
         return len(self.__viewers)
@@ -89,4 +94,67 @@ class UserModel:
         if t_id in self.__ureg_req.keys():
             del self.__ureg_req[t_id]
 
+    def add_camera(self, cam):
+        if cam.cam_id not in [i_cam.cam_id for i_cam in self.__cameras]:
+            self.__cameras.append(cam)
 
+    def get_cameras_len(self):
+        return len(self.__cameras)
+
+    def camera_switch_state(self, t_i, state):
+        al_msg = ""
+        if state:
+            al_msg = cfg.CAM_STARTED.format(self.get_camera_by_i(t_i).cam_name,
+                                            str(state))
+        else:
+            al_msg = cfg.CAM_STOPPED.format(self.get_camera_by_i(t_i).cam_name,
+                                            str(state))
+
+        self.__alerts.append(Alert(cfg.T_CAM_SW, al_msg))
+
+    def get_camera_by_i(self, t_i):
+        if len(self.__cameras) > t_i:
+            return self.__cameras[t_i]
+
+        return None
+
+    def is_alerts_exists(self):
+        return True if self.__alerts else False
+
+    def get_alert(self):
+        return self.__alerts.pop()
+
+
+class Camera:
+    def __init__(self, c_id, c_name, work_f=True):
+        self.__c_id = c_id
+        self.__c_name = c_name
+        self.__work_f = work_f
+
+    @property
+    def cam_id(self):
+        return self.__c_id
+
+    @property
+    def cam_name(self):
+        return self.__c_name
+
+    @property
+    def status(self):
+        return self.__work_f
+
+    @status.setter
+    def status(self, state):
+        print("cam {:s} state: {:s}".format(self.__c_name,
+                                            str(state)))
+        if state:
+            pass
+        else:
+            pass
+
+
+class Alert:
+    def __init__(self, t, m, im=None):
+        self.type = t
+        self.msg = m
+        self.img = im

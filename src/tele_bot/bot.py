@@ -31,6 +31,12 @@ class Tele_Bot(telebot.TeleBot):
         self.__reg_pos = None
         self.__reg_item = None
 
+        self.__cam_sel_id = None
+        self.__cam_sel_state = None
+        self.__cam_sel_state_str = None
+
+        self.__create_cam_menu()
+
         @bot.message_handler(commands=[C_START, C_HELP])
         def handle_start(msg):
             out_log("Rx \"{:s}\" by {:s} : {:s}".format(msg.text,
@@ -50,8 +56,8 @@ class Tele_Bot(telebot.TeleBot):
                 self.__restart_bot(msg)
             elif t_comm == C_A_STOP:
                 self.__stop_bot(msg)
-            elif t_comm == C_CTRL:
-                self.__show_ctrl_m(msg)
+            elif t_comm == C_CAMS:
+                self.__show_cams_m(msg)
             elif t_comm == C_A_WHO_ARE or t_comm == C_A_WHO_R or t_comm == C_A_WHO_UR:
                 self.__show_who_are(msg)
             elif t_comm == C_R_ACC or t_comm == C_R_KICK:
@@ -64,8 +70,22 @@ class Tele_Bot(telebot.TeleBot):
                 self.__add_req_ureg(msg)
             elif t_comm == C_LAST_F:
                 self.__get_last_frame(msg)
-            elif t_comm == C_GET or t_comm == C_BACK or t_comm == C_UPD:
+            elif t_comm == C_MENU or t_comm == C_BACK or t_comm == C_UPD:
                 self.__show_m(msg)
+            elif t_comm == C_C_ON or t_comm == C_C_OFF:
+                self.__cam_switch_state(msg)
+            elif t_comm in CAM_M:
+                self.__show_cam_m(msg)
+
+    def __create_cam_menu(self):
+        cams_n = self.__model.get_cameras_len()
+
+        for n in range(cams_n):
+            cam_name_tmp = self.__model.get_camera_by_i(n).cam_name
+            CAM_M.append(cam_name_tmp)
+            CAM_MARKUP.row(*[cam_name_tmp])
+
+        CAM_MARKUP.row(*[C_MENU])
 
     def __def_reg(self):
         self.__reg_state = ''
@@ -116,8 +136,8 @@ class Tele_Bot(telebot.TeleBot):
         self.__def_reg()
 
     @hm_protect
-    def __show_ctrl_m(self, msg):
-        self.send_message(msg.chat.id, TO_RULE, reply_markup=CTRL_MARK)
+    def __show_cams_m(self, msg):
+        self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_MARKUP)
 
     @mid_protect
     def __show_viewer_m(self, msg):
@@ -135,6 +155,19 @@ class Tele_Bot(telebot.TeleBot):
 
     def __show_kick_m(self):
         self.send_message(ADMIN_ID, TO_RULE, reply_markup=KICK_MARK)
+
+    def __switch_sel_cam_state(self, state):
+        self.__cam_sel_state = state
+        self.__cam_sel_stat_str = "работает" if state else "не работает"
+
+    @hm_protect
+    def __show_cam_m(self, msg):
+        self.__cam_sel_id = CAM_M.index(msg.text)
+        self.__switch_sel_cam_state(self.__model.get_camera_by_i(self.__cam_sel_id))
+
+        self.send_message(msg.chat.id, "Камера \"{:s}\" сейчас {:s}".format(msg.text,
+                                                                            self.__cam_sel_stat_str))
+        self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_CTRL_MARK)
 
     def __show_bot_started(self):
         msg = BOT_START.format(ver.V_FULL)
@@ -244,15 +277,15 @@ class Tele_Bot(telebot.TeleBot):
         return False
 
     def __show_alert(self):
-        if self.__alert_q.empty():
-            return
+        if self.__model.is_alerts_exists():
+            alert = self.__model.get_alert()
 
-        self.send_photo(ADMIN_ID, photo=self.__alert_q.get())
-        out_log("Move alert")
+            self.send_message(ADMIN_ID, alert.msg)
+            if alert.type == cfg.T_CAM_MOVE:
+                self.send_photo(ADMIN_ID, photo=alert.type)
+                out_log(MOVE_ALERT)
 
-        # for i in range(0, self.__model.get_viewers_len()):
-        #     (s_id, s_name) = self.__model.get_viewer_by_i(i)
-        #     self.send_message(s_id, BOT_STOP)
+            # do for all viewers
 
     @hi_protect
     def __do_reg(self, msg):
@@ -284,6 +317,14 @@ class Tele_Bot(telebot.TeleBot):
         self.__model.add_ureg_req(t_id, t_name)
         self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" want to unregister".format(t_id,
                                                                                      t_name))
+
+    @hm_protect
+    def __cam_switch_state(self, msg):
+        state = True if msg.text == C_C_ON else False
+
+        if state != self.__cam_sel_state:
+            self.__switch_sel_cam_state(state)
+            self.__model.camera_switch_state(self.__cam_sel_id, state)
 
     @hm_protect
     def __get_last_frame(self, msg):

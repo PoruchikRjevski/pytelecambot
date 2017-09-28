@@ -13,17 +13,16 @@ from observer.obs_defs import *
 __all__ = ['Observer']
 
 class Observer:
-    def __init__(self):
-        self.__camera_id = 0
+    def __init__(self, out_d, cam_id):
+        self.__cam_id = cam_id
         self.__camera = None
         self.__last_frame = None
         self.__stop_f = False
 
         self.__capt_last_time = None
 
-        date = datetime.date.today().__str__()
-        self.__cur_dir = os.path.join(os.getcwd(), cfg.OUT_P, date)
-        self.__check_dir(self.__cur_dir)
+        self.__cur_dir = out_d
+        print("cam: {:s}, dir: {:s}".format(str(cam_id), self.__cur_dir))
 
     def __check_dir(self, dir):
         if not os.path.exists(dir):
@@ -36,7 +35,7 @@ class Observer:
         return wrapped
 
     def __init_camera(self):
-        self.__camera = cv2.VideoCapture(self.__camera_id)
+        self.__camera = cv2.VideoCapture(self.__cam_id)
 
     @is_camera
     def __deinit_camera(self):

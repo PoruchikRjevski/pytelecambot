@@ -14,3 +14,12 @@ QUIET           = False
 # DB
 DB_PATH         = "../misc/main"
 INI_PATH        = "../misc/main.ini"
+
+# alert types
+T_CAM_MOVE               = 0
+T_CAM_SW                 = 1
+
+# alert msgs
+
+CAM_STOPPED             = "Камера {:s} выключена"
+CAM_STARTED             = "Камера {:s} включена"

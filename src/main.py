@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+import datetime
 import threading
 import queue
 
@@ -28,13 +29,28 @@ def update_ver():
 def reset_app():
     os.execl(sys.executable, sys.executable, *sys.argv)
 
+
+def check_dir(dir):
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+
+
 if __name__ == '__main__':
     # preprocess
     log_set_mt(cfg.MULTITHREAD)
     log_set_q(cfg.QUIET)
     log_init(os.path.join(os.getcwd(), cfg.LOG_P))
 
+    check_dir(os.path.join(os.getcwd(), cfg.OUT_P))
+
+    date = datetime.date.today().__str__()
+    out_d = os.path.join(os.getcwd(), cfg.OUT_P, date)
+    check_dir(out_d)
+
     update_ver()
+
+    # todo optionsparser read config, create cameras and return list of thats
+    test_camera = Camera(0, "main", False)
 
     # create essence
     alert_queue = queue.Queue()
@@ -42,19 +58,25 @@ if __name__ == '__main__':
     cfg.FULL_P = os.path.join(os.getcwd(), cfg.LAST_D_P, cfg.LAST_F)
 
     user_mod = UserModel(os.path.join(os.getcwd(), cfg.INI_PATH))
+    user_mod.add_camera(test_camera)
+
     tele_bot = Tele_Bot(user_mod)
     tele_bot.set_reset_f(reset_app)
     tele_bot.set_queue(alert_queue)
-    observ = Observer()
+
+
+    cam_ids = [0]
+
+    # observ = Observer()
 
     # create threads
     tb_t = threading.Thread(target=tele_bot.do_work)
-    obs_t = threading.Thread(target=observ.do_work_test)
+    # obs_t = threading.Thread(target=observ.do_work_test)
     # tele_bot.do_work()
 
     # start work
     tb_t.start()
-    obs_t.start()
+    # obs_t.start()
 
     # test
 
@@ -66,7 +88,7 @@ if __name__ == '__main__':
 
     # wait threads
     tb_t.join()
-    obs_t.join()
+    # obs_t.join()
 
     # postprocess
     if cfg.MULTITHREAD:
