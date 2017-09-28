@@ -280,8 +280,8 @@ class Tele_Bot(telebot.TeleBot):
 
             self.send_message(ADMIN_ID, alert.msg)
             if alert.type == cmn.T_CAM_MOVE:
-                self.send_photo(ADMIN_ID, photo=alert.type)
-                out_log(MOVE_ALERT)
+                self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
+                out_log(alert.msg)
 
             # do for all viewers
 

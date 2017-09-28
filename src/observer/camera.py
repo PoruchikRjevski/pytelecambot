@@ -2,6 +2,7 @@ import os
 import time
 import datetime
 import threading
+import queue
 
 import common as cmn
 from observer.cam_defs import *
@@ -19,6 +20,8 @@ class Camera:
 
         self.__handle_cam = None
         self.__video_writer = None
+
+        self.__alert_deq = queue.deque()
 
         self.__thread = threading.Thread(target=self.__do_work_test)
 
@@ -74,7 +77,10 @@ class Camera:
 
     def __write_frame(self, frame):
         file_p = os.path.join(self.__path_d, "{:s}.jpg".format(self.__time_stamp))
+
         cv2.imwrite(file_p, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
+
+        return file_p
 
     def __write_video(self):
         file_p = os.path.join(self.__path_d, "{:s}.avi".format(self.__time_stamp))
@@ -134,6 +140,8 @@ class Camera:
         self.state = False
 
     def __do_work_test(self):
+        once = True
+
         while self.__work_f:
             frame = self.__get_frame_test()
 
@@ -143,9 +151,20 @@ class Camera:
 
             self.__last_frame = frame
 
-            self.__write_frame(frame)
+            path = self.__write_frame(frame)
 
-            time.sleep(OBSERVING_TMT)
+            if once:
+                self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE,
+                                                  cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                                        self.__c_name,
+                                                                        self.__time_stamp),
+                                                  path))
+                once = False
+            else:
+                time.sleep(OBSERVING_TMT)
+
+    def set_alert_deq(self, a_deq):
+        self.__alert_deq = a_deq
 
     @property
     def cam_id(self):
@@ -161,14 +180,21 @@ class Camera:
 
     @state.setter
     def state(self, state):
+        if state == self.__work_f:
+            return False
+
         self.__work_f = state
 
         if state:
+            self.__alert_deq.append(cmn.Alert(cmn.T_CAM_SW, cmn.CAM_STARTED.format(self.__c_name,
+                                                                                   str(state))))
             self.__thread.start()
+            al_msg = cmn.CAM_STARTED.format(self.__c_name,
+                                            str(state))
         else:
             self.__thread.join()
-
-        # todo send alert about change state
+            self.__alert_deq.append(cmn.Alert(cmn.T_CAM_SW, cmn.CAM_STOPPED.format(self.__c_name,
+                                                                                   str(state))))
 
         return True
 

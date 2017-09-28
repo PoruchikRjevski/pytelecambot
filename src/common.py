@@ -26,6 +26,7 @@ T_CAM_SW                 = 1
 
 CAM_STOPPED             = "Камера {:s} выключена"
 CAM_STARTED             = "Камера {:s} включена"
+MOVE_ALERT              = "Камера: {:s}_{:s}\nДвижение в {:s}!"
 
 
 # common functions
@@ -36,3 +37,10 @@ def reset_app():
 def make_dir(dir):
     if not os.path.exists(dir):
         os.mkdir(dir)
+
+
+class Alert:
+    def __init__(self, t, m, im=None):
+        self.type = t
+        self.msg = m
+        self.img = im

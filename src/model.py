@@ -3,9 +3,8 @@ import queue
 
 import base_daemon.base_daemon as b_d
 from observer.camera import *
-import common as cfg
 
-__all__ = ['UserModel', 'Camera']
+__all__ = ['UserModel']
 
 class UserModel:
     def __init__(self, path):
@@ -97,6 +96,7 @@ class UserModel:
 
     def add_camera(self, cam):
         if cam.cam_id not in [i_cam.cam_id for i_cam in self.__cameras]:
+            cam.set_alert_deq(self.__alerts)
             self.__cameras.append(cam)
 
     def get_cameras_len(self):
@@ -104,17 +104,6 @@ class UserModel:
 
     def camera_switch_state(self, t_i, state):
         self.get_camera_by_i(t_i).state = state
-
-        # move add alert to Camera
-        al_msg = ""
-        if state:
-            al_msg = cfg.CAM_STARTED.format(self.get_camera_by_i(t_i).cam_name,
-                                            str(state))
-        else:
-            al_msg = cfg.CAM_STOPPED.format(self.get_camera_by_i(t_i).cam_name,
-                                            str(state))
-
-        self.__alerts.append(Alert(cfg.T_CAM_SW, al_msg))
 
     def get_camera_by_i(self, t_i):
         if len(self.__cameras) > t_i:
@@ -126,11 +115,4 @@ class UserModel:
         return True if self.__alerts else False
 
     def get_alert(self):
-        return self.__alerts.pop()
-
-
-class Alert:
-    def __init__(self, t, m, im=None):
-        self.type = t
-        self.msg = m
-        self.img = im
+        return self.__alerts.popleft()

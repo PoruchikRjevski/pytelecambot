@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     # todo optionsparser read config, create cameras and return list of thats
     main_camera = Camera(0, "main", out_d, False)
-    sec_camera = Camera(0, "sec", out_d, False)
+    sec_camera = Camera(1, "sec", out_d, False)
 
     # create essence
     alert_queue = queue.Queue()
@@ -51,35 +51,19 @@ if __name__ == '__main__':
 
     user_mod = UserModel(os.path.join(os.getcwd(), cmn.INI_PATH))
     user_mod.add_camera(main_camera)
+    user_mod.add_camera(sec_camera)
 
     tele_bot = Tele_Bot(user_mod)
     tele_bot.set_queue(alert_queue)
 
-
-    cam_ids = [0]
-
-    # observ = Observer()
-
     # create threads
     tb_t = threading.Thread(target=tele_bot.do_work)
-    # obs_t = threading.Thread(target=observ.do_work_test)
-    # tele_bot.do_work()
 
     # start work
     tb_t.start()
-    # obs_t.start()
-
-    # test
-
-    # time.sleep(5)
-    # tele_bot.stop_bot()
-    # time.sleep(5)
-    # alert_queue.put(open(os.path.join(os.getcwd(), cfg.LAST_D_P, cfg.LAST_F_T), 'rb'))
-    # test
 
     # wait threads
     tb_t.join()
-    # obs_t.join()
 
     # postprocess
     if cmn.MULTITHREAD:
