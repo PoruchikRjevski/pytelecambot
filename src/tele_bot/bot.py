@@ -403,6 +403,8 @@ class Tele_Bot(telebot.TeleBot):
                 out_log("rx updates: {:s}".format(str(upds_num)))
             self.__show_alert()
 
+        self.__model.switch_off_cameras()
+
         self.__show_bot_stopped()
 
     def do_work(self):

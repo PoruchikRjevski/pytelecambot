@@ -106,6 +106,10 @@ class UserModel:
         for cam in self.__cameras:
             cam.accept_state()
 
+    def switch_off_cameras(self):
+        for cam in self.__cameras:
+            cam.state = False
+
     def get_cameras_len(self):
         return len(self.__cameras)
 

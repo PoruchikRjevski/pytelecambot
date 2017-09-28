@@ -24,7 +24,7 @@ class Camera:
 
         self.__alert_deq = queue.deque()
 
-        self.__thread = threading.Thread(target=self.__do_work_test)
+        self.__thread = threading.Thread(target=self.__do_work)
 
         self.__path_d = os.path.join(out_d, "{:s}_{:s}".format(str(c_id),
                                                                c_name))
