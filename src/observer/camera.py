@@ -77,11 +77,9 @@ class Camera:
         return cv2.subtract(img_1, img_2).any()
 
     def __write_frame(self, frame):
-        file_p = os.path.join(self.__path_d, "{:s}.jpg".format(self.__time_stamp))
+        self.__last_frame_p = os.path.join(self.__path_d, "{:s}.jpg".format(self.__time_stamp))
 
-        cv2.imwrite(file_p, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
-
-        return file_p
+        cv2.imwrite(self.__last_frame_p, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
 
     def __write_video(self):
         file_p = os.path.join(self.__path_d, "{:s}.avi".format(self.__time_stamp))
@@ -127,14 +125,18 @@ class Camera:
 
             frame = self.__process_img(frame)
 
+            self.__write_frame(frame)
+
             if not self.__last_frame is None:
                 if self.__compare_imgs(frame, self.__last_frame):
                     self.__write_video()
-                    # todo send alert
+                    self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE,
+                                                      cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                                            self.__c_name,
+                                                                            self.__time_stamp),
+                                                      self.__last_frame_p))
 
             self.__last_frame = frame
-
-            self.__write_frame(frame)
 
         self.__deinit_camera()
 
@@ -152,7 +154,7 @@ class Camera:
 
             self.__last_frame = frame
 
-            self.__last_frame_p = self.__write_frame(frame)
+            self.__write_frame(frame)
 
             if once:
                 self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE,
