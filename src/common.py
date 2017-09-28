@@ -18,6 +18,9 @@ QUIET           = False
 DB_PATH         = "../misc/main"
 INI_PATH        = "../misc/main.ini"
 
+# cameras config path
+CAMS_F_PATH        = "../misc/cameras.ini"
+
 # alert types
 T_CAM_MOVE               = 0
 T_CAM_SW                 = 1

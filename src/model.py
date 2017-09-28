@@ -18,6 +18,10 @@ class UserModel:
 
         self.__alerts = queue.deque()
 
+    def __set_alert_deq(self):
+        for cam in self.__cameras:
+            cam.set_alert_deq(self.__alerts)
+
     def get_viewers_len(self):
         return len(self.__viewers)
 
@@ -94,10 +98,13 @@ class UserModel:
         if t_id in self.__ureg_req.keys():
             del self.__ureg_req[t_id]
 
-    def add_camera(self, cam):
-        if cam.cam_id not in [i_cam.cam_id for i_cam in self.__cameras]:
-            cam.set_alert_deq(self.__alerts)
-            self.__cameras.append(cam)
+    def add_cameras(self, cam_list):
+        self.__cameras = cam_list
+        self.__set_alert_deq()
+
+    def check_cameras(self):
+        for cam in self.__cameras:
+            cam.accept_state()
 
     def get_cameras_len(self):
         return len(self.__cameras)

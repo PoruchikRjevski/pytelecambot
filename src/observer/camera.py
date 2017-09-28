@@ -166,6 +166,12 @@ class Camera:
             else:
                 time.sleep(OBSERVING_TMT)
 
+    def accept_state(self):
+        if self.__work_f:
+            self.__alert_deq.append(cmn.Alert(cmn.T_CAM_SW, cmn.CAM_STARTED.format(self.__c_name,
+                                                                                   str(self.__work_f))))
+            self.__thread.start()
+
     def set_alert_deq(self, a_deq):
         self.__alert_deq = a_deq
 
@@ -183,23 +189,15 @@ class Camera:
 
     @state.setter
     def state(self, state):
-        if state == self.__work_f:
-            return False
+        if state != self.__work_f:
+            self.__work_f = state
 
-        self.__work_f = state
-
-        if state:
-            self.__alert_deq.append(cmn.Alert(cmn.T_CAM_SW, cmn.CAM_STARTED.format(self.__c_name,
-                                                                                   str(state))))
-            self.__thread.start()
-            al_msg = cmn.CAM_STARTED.format(self.__c_name,
-                                            str(state))
-        else:
-            self.__thread.join()
-            self.__alert_deq.append(cmn.Alert(cmn.T_CAM_SW, cmn.CAM_STOPPED.format(self.__c_name,
-                                                                                   str(state))))
-
-        return True
+            if state:
+                self.accept_state()
+            else:
+                self.__thread.join()
+                self.__alert_deq.append(cmn.Alert(cmn.T_CAM_SW, cmn.CAM_STOPPED.format(self.__c_name,
+                                                                                       str(self.__work_f))))
 
     @property
     def last_frame(self):

@@ -23,8 +23,6 @@ class Tele_Bot(telebot.TeleBot):
 
         self.__model = u_model
 
-        self.__alert_q = queue.Queue()
-
         self.__reg_state = ''
         self.__reg_pos = None
         self.__reg_item = None
@@ -409,9 +407,6 @@ class Tele_Bot(telebot.TeleBot):
 
     def do_work(self):
         self.__main_loop()
-
-    def set_queue(self, a_queue):
-        self.__alert_q = a_queue
 
     def stop_bot(self):
         self.__stop_f = True
