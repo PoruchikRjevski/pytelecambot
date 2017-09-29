@@ -220,7 +220,7 @@ class Camera:
 
             if ret:
                 cur_t = time.time()
-                self.__time_stamp = datetime.datetime.now().__str__()
+                self.__time_stamp = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
 
                 frame = self.__process_img(frame)
 
@@ -261,7 +261,7 @@ class Camera:
 
             if ret:
                 cur_t = time.time()
-                self.__time_stamp = datetime.datetime.now().__str__()
+                self.__time_stamp = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
 
                 frame = self.__process_img(frame)
 
@@ -272,7 +272,7 @@ class Camera:
                         once = False
 
                         self.__f_rec = True
-                        self.__move_time_stamp = str(self.__time_stamp)
+                        self.__move_time_stamp = self.__time_stamp
                         obs_t = cur_t
 
                         # todo detach to other process
