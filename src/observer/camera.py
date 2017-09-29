@@ -27,7 +27,7 @@ class Camera:
 
         self.__alert_deq = queue.deque()
 
-        self.__thread = threading.Thread(target=self.__do_work_test)
+        self.__thread = threading.Thread(target=self.__do_work)
 
         self.__path_d = os.path.join(out_d, "{:s}_{:s}".format(str(c_id),
                                                                c_name))
@@ -204,6 +204,14 @@ class Camera:
 
     def __do_work(self):
         self.__init_camera()
+
+        if not self.__handle_cam.isOpened():
+            self.__do_work_test()
+
+            self.__deinit_camera()
+            self.state = False
+            return
+
         obs_t = time.time()
 
         while self.__work_f:
