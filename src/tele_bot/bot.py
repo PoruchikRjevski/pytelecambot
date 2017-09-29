@@ -277,8 +277,13 @@ class Tele_Bot(telebot.TeleBot):
             alert = self.__model.get_alert()
 
             self.send_message(ADMIN_ID, alert.msg)
-            if alert.type == cmn.T_CAM_MOVE:
+            if alert.type == cmn.T_CAM_MOVE_PHOTO:
                 self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
+                out_log(alert.msg)
+            elif alert.type == cmn.T_CAM_MOVE_MP4:
+                self.send_video(ADMIN_ID, data=open(alert.img, 'rb'))
+                # self.send_document(ADMIN_ID, data=open(alert.img, 'rb'))
+                # self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
                 out_log(alert.msg)
 
             # do for all viewers

@@ -25,7 +25,7 @@ For exec:
 TODO:
 - show for admin number of ids in buttons
 
-
+ffmpeg -i frame_%d.jpg res.mp4
 
 478415418 = Mary
 

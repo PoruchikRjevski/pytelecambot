@@ -22,8 +22,9 @@ INI_PATH        = "../misc/main.ini"
 CAMS_F_PATH        = "../misc/cameras.ini"
 
 # alert types
-T_CAM_MOVE               = 0
-T_CAM_SW                 = 1
+T_CAM_MOVE_MP4           = 0
+T_CAM_MOVE_PHOTO         = 1
+T_CAM_SW                 = 2
 
 # alert msgs
 
@@ -40,6 +41,11 @@ def reset_app():
 def make_dir(dir):
     if not os.path.exists(dir):
         os.mkdir(dir)
+
+
+def rem_dir(dir):
+    if not os.path.exists(dir):
+        os.rmdir(dir)
 
 
 class Alert:

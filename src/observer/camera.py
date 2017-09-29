@@ -5,10 +5,13 @@ import threading
 import queue
 
 import common as cmn
+from logger import *
 from observer.cam_defs import *
+from git_man import cmd_executor as cmd_ex
 
 import numpy as np
 import cv2
+
 
 class Camera:
     def __init__(self, c_id, c_name, out_d, work_f=True):
@@ -24,10 +27,22 @@ class Camera:
 
         self.__alert_deq = queue.deque()
 
-        self.__thread = threading.Thread(target=self.__do_work)
+        self.__thread = threading.Thread(target=self.__do_work_test)
 
         self.__path_d = os.path.join(out_d, "{:s}_{:s}".format(str(c_id),
                                                                c_name))
+
+        self.__pre_rec_buff_sz = VIDEO_REC_TIME_PRE * VIDEO_REC_FPS
+        self.__full_rec_buff_sz = VIDEO_REC_TIME_FULL * VIDEO_REC_FPS
+        self.__rec_buff = queue.deque()
+        self.__frame_rec_tmt = 1 / VIDEO_REC_FPS
+
+        self.__f_rec = False
+        self.__f_wr_mp4 = False
+
+        self.__test = True
+
+        self.__move_time_stamp = ""
 
         cmn.make_dir(self.__path_d)
 
@@ -38,7 +53,12 @@ class Camera:
         return self.__handle_cam.read()
 
     def __get_frame_test(self):
-        return cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "im_{:s}.jpg".format(str(self.__c_id))))
+        if self.__test:
+            self.__test = False
+            return cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_0.jpg"))
+        else:
+            self.__test = True
+            return cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_1.jpg"))
 
     def __accept_gray_filter(self, frame):
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -56,20 +76,23 @@ class Camera:
 
         return frame
 
-    def __decrease_img(self, frame):
+    def __decrease_img(self, frame, p_w, p_h):
         h, w, _ = frame.shape
 
-        if h > FRAME_H and w > FRAME_W:
-            frame = cv2.resize(frame, (FRAME_W, FRAME_H))
+        if h > p_h and w > p_w:
+            frame = cv2.resize(frame, (p_w, p_h))
 
         return frame
 
     def __process_img(self, img):
-        img = self.__decrease_img(img)
+        img = self.__decrease_img(img, HI_W, HI_H)
 
         img = self.__accept_gray_filter(img)
 
-        img = self.__add_timestamp(img)
+        return img
+
+    def __process_img_rec(self, img):
+        img = self.__decrease_img(img, LO_W, LO_H)
 
         return img
 
@@ -77,18 +100,37 @@ class Camera:
         return cv2.subtract(img_1, img_2).any()
 
     def __write_frame(self, frame):
+        frame = self.__add_timestamp(frame)
+
         self.__last_frame_p = os.path.join(self.__path_d, "{:s}.jpg".format(self.__time_stamp))
 
         cv2.imwrite(self.__last_frame_p, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
+
+    def __add_to_buf(self, frame):
+        if not self.__f_rec:
+            if self.__rec_buff.__len__() > self.__pre_rec_buff_sz:
+                self.__rec_buff.pop()
+        else:
+            if not self.__f_wr_mp4:
+                if self.__rec_buff.__len__() >= self.__full_rec_buff_sz:
+                    self.__f_wr_mp4 = True
+                    # todo detach to other process
+                    self.__write_mp4()
+
+                    return
+            else:
+                return
+
+        self.__rec_buff.append(self.__add_timestamp(frame))
 
     def __write_video(self):
         file_p = os.path.join(self.__path_d, "{:s}.avi".format(self.__time_stamp))
         self.__video_writer = cv2.VideoWriter(file_p,
                                               -1,
                                               VIDEO_REC_FPS,
-                                              (FRAME_W, FRAME_H))
+                                              (HI_W, HI_H))
 
-        frames = VIDEO_REC_FPS * VIDEO_REC_TIME
+        frames = VIDEO_REC_FPS * VIDEO_REC_TIME_FULL
 
         start_t = time.time()
         while frames != 0:
@@ -108,35 +150,93 @@ class Camera:
 
         self.__video_writer.release()
 
+    def __free_rec_buff(self, dir_p):
+        i_f = 0
+        while self.__rec_buff:
+            file_t_p = os.path.join(dir_p, "frame_{:s}.jpg".format(str(i_f)))
+            cv2.imwrite(file_t_p, self.__rec_buff.pop(), [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
+            i_f += 1
+
+    def __write_mp4(self):
+        dir_p = os.path.join(self.__path_d, "temp/")
+        cmn.make_dir(dir_p)
+        mp4_hi_f = os.path.join(self.__path_d, "{:s}_hi.mp4".format(self.__move_time_stamp))
+        mp4_lo_f = os.path.join(self.__path_d, "{:s}_lo.mp4".format(self.__move_time_stamp))
+
+        # write .jpg's to temp
+        start_t = time.time()
+        size = self.__rec_buff.__len__()
+
+        self.__free_rec_buff(dir_p)
+
+        start_t = time.time() - start_t
+        out_log("writed {:s} frames for {:s}".format(str(size),
+                                                     str(start_t)))
+
+        # create videos
+        start_t = time.time()
+        cmd_ex.run_cmd(CMD_FFMPEG_CONVERT.format(dir_p,
+                                                 "",
+                                                 mp4_hi_f))
+
+        cmd_ex.run_cmd(CMD_FFMPEG_CONVERT.format(dir_p,
+                                                 A_SCALE.format(str(LO_W), str(LO_H)),
+                                                 mp4_lo_f))
+        start_t = time.time() - start_t
+        out_log("created videos for {:s}".format(str(start_t)))
+
+
+        # remove temp
+        cmn.rem_dir(dir_p)
+
+        # send alerts
+        self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE_MP4,
+                                          cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                                self.__c_name,
+                                                                self.__time_stamp),
+                                          mp4_lo_f))
+
+        self.__f_rec = False
+        self.__f_wr_mp4 = False
 
     def __deinit_camera(self):
         self.__handle_cam.release()
 
     def __do_work(self):
         self.__init_camera()
+        obs_t = time.time()
 
         while self.__work_f:
+            rec_t = time.time()
             ret, frame = self.__get_frame()
 
-            if not ret:
-                continue
+            if ret:
+                cur_t = time.time()
+                self.__time_stamp = datetime.datetime.now().__str__()
 
-            self.__time_stamp = datetime.datetime.now().__str__()
+                frame = self.__process_img(frame)
 
-            frame = self.__process_img(frame)
+                # self.__add_to_buf(self.__process_img_rec(frame))
+                #
+                # if (cur_t - obs_t) >= OBSERVING_TMT:
+                #     if not self.__last_frame is None:
+                #         if self.__compare_imgs(frame, self.__last_frame):
+                #             # self.__write_video()
+                #             self.__write_gif()
+                #             self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE,
+                #                                               cmn.MOVE_ALERT.format(str(self.__c_id),
+                #                                                                     self.__c_name,
+                #                                                                     self.__time_stamp),
+                #                                               self.__last_frame_p))
+                #     obs_t = cur_t
 
             self.__write_frame(frame)
 
-            if not self.__last_frame is None:
-                if self.__compare_imgs(frame, self.__last_frame):
-                    self.__write_video()
-                    self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE,
-                                                      cmn.MOVE_ALERT.format(str(self.__c_id),
-                                                                            self.__c_name,
-                                                                            self.__time_stamp),
-                                                      self.__last_frame_p))
-
             self.__last_frame = frame
+
+            rec_t = time.time() - rec_t
+            if rec_t < self.__frame_rec_tmt:
+                time.sleep(self.__frame_rec_tmt - rec_t)
 
         self.__deinit_camera()
 
@@ -144,27 +244,40 @@ class Camera:
 
     def __do_work_test(self):
         once = True
+        obs_t = time.time()
 
         while self.__work_f:
+            rec_t = time.time()
             frame = self.__get_frame_test()
+            ret = True
 
-            self.__time_stamp = datetime.datetime.now().__str__()
+            if ret:
+                cur_t = time.time()
+                self.__time_stamp = datetime.datetime.now().__str__()
 
-            frame = self.__process_img(frame)
+                frame = self.__process_img(frame)
 
-            self.__last_frame = frame
+                self.__add_to_buf(frame)
 
-            self.__write_frame(frame)
+                if not self.__f_rec:
+                    if once:
+                        once = False
 
-            if once:
-                self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE,
-                                                  cmn.MOVE_ALERT.format(str(self.__c_id),
-                                                                        self.__c_name,
-                                                                        self.__time_stamp),
-                                                  self.__last_frame_p))
-                once = False
+                        self.__f_rec = True
+                        self.__move_time_stamp = str(self.__time_stamp)
+                        obs_t = cur_t
+
+                        # todo detach to other process
+                        self.__write_frame(frame)
+                        self.__last_frame = frame
+
+            rec_t = time.time() - rec_t
+            if rec_t < self.__frame_rec_tmt:
+                time.sleep(self.__frame_rec_tmt - rec_t)
             else:
-                time.sleep(OBSERVING_TMT)
+                print("bad: {:s}".format(str(rec_t)))
+
+        self.state = False
 
     def accept_state(self):
         if self.__work_f:
