@@ -79,7 +79,7 @@ for row in VIEWERS_M:
 UNDEF_M                 = [[C_U_REG],
                            [C_UPD]]
 UNDEF_MARK = telebot.types.ReplyKeyboardMarkup()
-for row in VIEWERS_M:
+for row in UNDEF_M:
     UNDEF_MARK.row(*row)
 
 
