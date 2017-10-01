@@ -1,4 +1,4 @@
-OBSERVING_TMT               = 0.5 # s
+OBSERVING_TMT               = 0.1 # s
 VIDEO_REC_TIME_FULL         = 5
 VIDEO_REC_TIME_PRE          = 1 # s
 VIDEO_REC_FPS               = 30

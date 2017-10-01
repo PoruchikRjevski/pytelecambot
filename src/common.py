@@ -2,9 +2,9 @@ import os
 import sys
 
 # PATHES
-LOG_P           = "../LOG/"
-OUT_P           = "../OUT/"
-LAST_D_P        = "../OUT/L_F/"
+LOG_P           = "../../LOG/"
+OUT_P           = "../../OUT/"
+LAST_D_P        = "../../OUT/L_F/"
 LAST_F          = "last_frame.jpg" # photo_2017-09-25_14-21-59.jpg
 LAST_F_T        = "photo_2017-09-25_14-21-59.jpg"
 
@@ -25,6 +25,7 @@ CAMS_F_PATH        = "../misc/cameras.ini"
 T_CAM_MOVE_MP4           = 0
 T_CAM_MOVE_PHOTO         = 1
 T_CAM_SW                 = 2
+T_CAM_NOW_PHOTO          = 3
 
 # alert msgs
 

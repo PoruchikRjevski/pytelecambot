@@ -5,6 +5,7 @@ import sys
 import time
 import datetime
 import threading
+import multiprocessing
 import queue
 
 import common as cmn
@@ -50,12 +51,15 @@ if __name__ == '__main__':
 
     tele_bot = Tele_Bot(user_mod)
     tb_t = threading.Thread(target=tele_bot.do_work)
+    # tb_p = multiprocessing.Process(target=tele_bot.do_work)
 
     # START
+    # tb_p.start()
     tb_t.start()
     user_mod.check_cameras()
 
     # FINISH
+    # tb_p.join()
     tb_t.join()
 
     # POSTPROCESS

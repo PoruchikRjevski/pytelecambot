@@ -2,7 +2,9 @@ import os
 import time
 import datetime
 import threading
+import multiprocessing
 import queue
+import copy
 
 import common as cmn
 from logger import *
@@ -22,7 +24,7 @@ class Camera:
         self.__last_frame = None
         self.__last_frame_p = ""
 
-        self.__handle_cam = None
+        # self.__handle_cam = None
         self.__video_writer = None
 
         self.__alert_deq = queue.deque()
@@ -42,12 +44,14 @@ class Camera:
 
         self.__test = True
 
+        self.__procs = []
+
         self.__move_time_stamp = ""
 
         cmn.make_dir(self.__path_d)
 
     def __init_camera(self):
-        self.__handle_cam = cv2.VideoCapture(self.__c_id)
+        self.__handle_cam = cv2.VideoCapture(int(self.__c_id))
 
     def __get_frame(self):
         return self.__handle_cam.read()
@@ -84,10 +88,15 @@ class Camera:
 
         return frame
 
+    def __mirroring_img(self, frame):
+        return cv2.flip(frame, 0)
+
     def __process_img(self, img):
         img = self.__decrease_img(img, HI_W, HI_H)
 
-        img = self.__accept_gray_filter(img)
+        # img = self.__mirroring_img(img)
+
+        # img = self.__accept_gray_filter(img)
 
         return img
 
@@ -114,41 +123,21 @@ class Camera:
             if not self.__f_wr_mp4:
                 if self.__rec_buff.__len__() >= self.__full_rec_buff_sz:
                     self.__f_wr_mp4 = True
+                    s_t = time.time()
+                    cp_buf = copy.copy(self.__rec_buff)
                     # todo detach to other process
+                    # proc = multiprocessing.Process(target=self.__write_mp4())
+                    # proc.start()
                     self.__write_mp4()
+
+                    s_t = time.time() - s_t
+                    out_log("detach writing videos t: {:s}".format(str(s_t)))
 
                     return
             else:
                 return
 
         self.__rec_buff.append(self.__add_timestamp(frame))
-
-    def __write_video(self):
-        file_p = os.path.join(self.__path_d, "{:s}.avi".format(self.__time_stamp))
-        self.__video_writer = cv2.VideoWriter(file_p,
-                                              -1,
-                                              VIDEO_REC_FPS,
-                                              (HI_W, HI_H))
-
-        frames = VIDEO_REC_FPS * VIDEO_REC_TIME_FULL
-
-        start_t = time.time()
-        while frames != 0:
-            ret, frame = self.__get_frame()
-
-            if ret:
-                frame = self.__process_img(frame)
-
-                self.__video_writer.write(frame)
-
-            stop_t = time.time() - start_t
-
-            if stop_t < VIDEO_REC_TMT:
-                time.sleep(VIDEO_REC_TMT - stop_t)
-
-            frames -= 1
-
-        self.__video_writer.release()
 
     def __free_rec_buff(self, dir_p):
         i_f = 0
@@ -176,12 +165,19 @@ class Camera:
         # create videos
         start_t = time.time()
         cmd_ex.run_cmd(CMD_FFMPEG_CONVERT.format(dir_p,
-                                                 "",
-                                                 mp4_hi_f))
-
-        cmd_ex.run_cmd(CMD_FFMPEG_CONVERT.format(dir_p,
                                                  A_SCALE.format(str(LO_W), str(LO_H)),
                                                  mp4_lo_f))
+
+        # send alerts
+        self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE_MP4,
+                                          cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                                self.__c_name,
+                                                                self.__time_stamp),
+                                          mp4_lo_f))
+
+        cmd_ex.run_cmd(CMD_FFMPEG_CONVERT.format(dir_p,
+                                                 "",
+                                                 mp4_hi_f))
         start_t = time.time() - start_t
         out_log("created videos for {:s}".format(str(start_t)))
 
@@ -204,19 +200,20 @@ class Camera:
 
     def __do_work(self):
         self.__init_camera()
-
-        if not self.__handle_cam.isOpened():
-            self.__do_work_test()
-
-            self.__deinit_camera()
-            self.state = False
-            return
+        #
+        # if not self.__handle_cam.isOpened():
+        #     self.__do_work_test()
+        #
+        #     self.__deinit_camera()
+        #     self.state = False
+        #     return
 
         obs_t = time.time()
 
-        while self.__work_f:
+        while self.__work_f and self.__handle_cam.isOpened():
             rec_t = time.time()
-            ret, frame = self.__get_frame()
+            ret, frame = self.__handle_cam.read()
+            # ret, frame = self.__get_frame()
 
             if ret:
                 cur_t = time.time()
@@ -224,23 +221,20 @@ class Camera:
 
                 frame = self.__process_img(frame)
 
-                # self.__add_to_buf(self.__process_img_rec(frame))
-                #
-                # if (cur_t - obs_t) >= OBSERVING_TMT:
-                #     if not self.__last_frame is None:
-                #         if self.__compare_imgs(frame, self.__last_frame):
-                #             # self.__write_video()
-                #             self.__write_gif()
-                #             self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE,
-                #                                               cmn.MOVE_ALERT.format(str(self.__c_id),
-                #                                                                     self.__c_name,
-                #                                                                     self.__time_stamp),
-                #                                               self.__last_frame_p))
-                #     obs_t = cur_t
+                # self.__add_to_buf(frame)
 
-            self.__write_frame(frame)
+                if not self.__f_rec:
+                    if (cur_t - obs_t) >= OBSERVING_TMT:
+                        # if not self.__last_frame is None:
+                        #     if self.__compare_imgs(frame, self.__last_frame):
+                        #         self.__write_move_photo(frame)
+                        #         self.__f_rec = True
+                        #         self.__move_time_stamp = self.__time_stamp
 
-            self.__last_frame = frame
+                        # todo detach to other process
+                        self.__write_frame(frame)
+                        self.__last_frame = frame
+                        obs_t = cur_t
 
             rec_t = time.time() - rec_t
             if rec_t < self.__frame_rec_tmt:
@@ -249,6 +243,19 @@ class Camera:
         self.__deinit_camera()
 
         self.state = False
+
+    def __write_move_photo(self, frame):
+        frame = self.__add_timestamp(frame)
+
+        move_ph_p = os.path.join(self.__path_d, "{:s}_MOVE.jpg".format(self.__time_stamp))
+
+        cv2.imwrite(move_ph_p, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
+
+        self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
+                                          cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                                self.__c_name,
+                                                                self.__time_stamp),
+                                          move_ph_p))
 
     def __do_work_test(self):
         once = True

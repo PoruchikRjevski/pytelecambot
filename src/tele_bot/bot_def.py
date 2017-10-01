@@ -35,9 +35,9 @@ C_R_DECL                = 'Decl'
 C_R_NEXT                = 'Next'
 C_R_KICK                = 'Kick'
 
-C_C_ON                  = 'on'
-C_C_OFF                 = 'off'
-C_C_LAST                = 'last'
+C_C_ON                  = 'Включить'
+C_C_OFF                 = 'Выключить'
+C_C_LAST                = 'Последнее'
 
 # keyboards
 GET_M                   = [[C_MENU]]
