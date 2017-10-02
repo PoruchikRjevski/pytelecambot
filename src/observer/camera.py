@@ -36,7 +36,7 @@ class Camera:
 
         self.__pre_rec_buff_sz = VIDEO_REC_TIME_PRE * VIDEO_REC_FPS
         self.__full_rec_buff_sz = VIDEO_REC_TIME_FULL * VIDEO_REC_FPS
-        self.__rec_buff = queue.deque()
+        # self.__rec_buff = queue.deque()
         self.__frame_rec_half_tmt = 1 / 2 * VIDEO_REC_FPS
 
         self.__f_rec = False
@@ -54,6 +54,9 @@ class Camera:
         self.__working_f = Value("i", 1)
         self.__working_f.value = False
         self.__now_frame_q = Queue()
+        self.__rec_buff_q = Queue()
+        self.__rec_f = Value("i", 1)
+        self.__rec_f.value = False
         # self.__now_frame_f = Value("i", 1)
         # self.__now_frame_f.value = False
 
@@ -253,9 +256,9 @@ class Camera:
 
     def __add_frame_to_pre_buf(self, frame, buff):
         if buff.__len__() >= PRE_REC_BUF_SZ:
-            buff.pop()
+            buff.get_nowait()
 
-        buff.append(frame)
+        buff.put_nowait(frame)
 
     def __write_now_frame(self, frame, ts_fr, ts_p):
         frame = self.__add_frame_timestamp(frame, ts_fr)
@@ -279,17 +282,23 @@ class Camera:
 
         return frame
 
-    def __do_work_proc(self, working_f, now_frame_q, out):
+    def __check_moving(self, cur_fr, l_fr):
+        pass
+
+    def __do_work_proc(self, working_f, now_frame_q, out, rec_f, rec_buf):
         cam_h = cv2.VideoCapture(int(self.cam_id))
         # cam_work = True
-        rec_buff = queue.deque()
+
+        rec_fr_cntr = 0
+        recording = False
+        mv_detected_ts = None
 
         rec_t = time.time()
         obs_t = time.time()
 
         check_t = 0
         timestamp = ''
-        last_frame_mv_d = None
+        last_frame = None
         last_frame_p = ''
 
         # while working_f.value and cam_work:
@@ -307,29 +316,49 @@ class Camera:
                     continue
 
                 timestamp = datetime.datetime.now()
+                ts_fr = timestamp.strftime(TIMESTAMP_FRAME_STR)
+                ts_p = timestamp.strftime(TIMESTAMP_PATH_STR)
+
+                frame_ts = self.__add_frame_timestamp(frame, ts_fr)
+
+                if recording:
+                    if rec_f.Value:
+                        rec_buf.put_nowait(frame_ts)
+                        rec_fr_cntr += 1
+
+                        if rec_fr_cntr >= FULL_REC_BUF_SZ:
+                            rec_buf.put_nowait(None)
+                            rec_buf.put_nowait(mv_detected_ts)
+                            recording = False
+                    else:
+                        self.__add_frame_to_pre_buf(frame_ts, rec_buf)
 
                 obs_t_c = cur_t - obs_t
                 if obs_t_c >= OBSERVING_TMT:
                     obs_t = obs_t_c
 
-                    # todo move detection
+                    if not rec_f.value and not recording:
+                        if last_frame is None:
+                            last_frame = frame
+                        else:
+                            if self.__check_moving(frame, last_frame):
+                                rec_f.value = True
+                                recording = True
+                                mv_detected_ts = ts_p
+                            else:
+                                last_frame = frame
 
-                    # last_frame_mv_d = frame
+                if now_frame_q.qsize() > 0:
+                    file_p = self.__write_now_frame(frame_ts, ts_p)
 
-                self.__add_frame_to_pre_buf(frame, rec_buff)
-
-                while now_frame_q.qsize() > 0:
-
-                    ts_fr = timestamp.strftime(TIMESTAMP_FRAME_STR)
-                    ts_p = timestamp.strftime(TIMESTAMP_PATH_STR)
-
-                    out.put_nowait(cmn.Alert(cmn.T_CAM_NOW_PHOTO,
-                                             cmn.NOW_ALERT.format(str(self.cam_id),
-                                                                  self.cam_name,
-                                                                  ts_fr),
-                                             self.__write_now_frame(frame, ts_fr, ts_p),
-                                             self.__c_name,
-                                             str(now_frame_q.get_nowait())))
+                    while now_frame_q.qsize() > 0:
+                        out.put_nowait(cmn.Alert(cmn.T_CAM_NOW_PHOTO,
+                                                 cmn.NOW_ALERT.format(str(self.cam_id),
+                                                                      self.cam_name,
+                                                                      ts_fr),
+                                                 file_p,
+                                                 self.__c_name,
+                                                 str(now_frame_q.get_nowait())))
             else:
                 if rec_t_c <= REC_TMT_SHIFT:
                     time.sleep(REC_TMT_SHIFT)
@@ -350,6 +379,30 @@ class Camera:
 
         self.state = False
         cam_h.release()
+
+    def __do_write_proc(self, working_f, rec_f, rec_buf):
+        while working_f.value:
+            if rec_f.value:
+                while rec_buf.qsize() > 0:
+                    frame = rec_buf.get_nowait()
+
+                    if frame is None:
+                        timestamp = rec_buf.get_nowait()
+                        # todo finish writing
+                        # exe ffmpeg
+                        pass
+
+                        rec_f.value = False
+
+                        while not rec_buf.empty():
+                            rec_buf.get()
+
+                        continue
+
+                    # write to temp file
+                    pass
+            else:
+                time.sleep(1)
 
     def __write_move_photo(self, frame):
         frame = self.__add_timestamp(frame)
@@ -406,17 +459,26 @@ class Camera:
     def autostart(self):
         if self.__autostart:
             self.__working_f.value = True
-            self.__start_proc()
+            self.__start_procs()
             self.__out_deq.put_nowait(cmn.Alert(cmn.T_CAM_SW,
                                                 cmn.CAM_STARTED.format(self.__c_name,
                                                                        str(True)),
                                                 None,
                                                 None))
 
-    def __start_proc(self):
-        self.__proc = Process(target=self.__do_work_proc,
-                              args=(self.__working_f, self.__now_frame_q, self.__out_deq,))
-        self.__proc.start()
+    def __start_procs(self):
+        self.__proc_rx = Process(target=self.__do_work_proc,
+                                 args=(self.__working_f,
+                                       self.__now_frame_q,
+                                       self.__out_deq,
+                                       self.__rec_f,
+                                       self.__rec_buff_q,))
+        self.__proc_rec = Process(target=self.__do_write_proc,
+                                 args=(self.__working_f,
+                                       self.__rec_f,
+                                       self.__rec_buff_q,))
+        self.__proc_rec.start()
+        self.__proc_rx.start()
 
     def set_alert_deq(self, a_deq):
         self.__out_deq = a_deq
@@ -441,7 +503,7 @@ class Camera:
             msg_t = ""
 
             if state:
-                self.__start_proc()
+                self.__start_procs()
                 msg_t = cmn.CAM_STARTED.format(self.__c_name,
                                                str(True))
             else:

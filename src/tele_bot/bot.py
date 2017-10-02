@@ -164,10 +164,10 @@ class Tele_Bot(telebot.TeleBot):
         self.send_message(ADMIN_ID, msg)
         self.send_message(ADMIN_ID, TO_RULE, reply_markup=GET_KB)
 
-        # for i in range(0, self.__model.get_viewers_len()):
-        #     (s_id, s_name) = self.__model.get_viewer_by_i(i)
-        #     self.send_message(s_id, msg)
-        #     self.send_message(s_id, TO_RULE, reply_markup=GET_MARK)
+        for i in range(0, self.__model.get_viewers_len()):
+            (s_id, s_name) = self.__model.get_viewer_by_i(i)
+            self.send_message(s_id, msg)
+            self.send_message(s_id, TO_RULE, reply_markup=GET_KB)
 
         out_log(msg)
 
@@ -247,7 +247,6 @@ class Tele_Bot(telebot.TeleBot):
             self.send_message(ADMIN_ID, "There are viewers:\n{:s}".format(self.__model.get_viewers_list_str()))
             return True
 
-        # self.send_message(ADMIN_ID, NOBODY)
         return False
 
     def __show_who_are_w_reg(self):
@@ -255,7 +254,6 @@ class Tele_Bot(telebot.TeleBot):
             self.send_message(ADMIN_ID, "There are want's to reg:\n{:s}".format(self.__model.get_reg_req_list_str()))
             return True
 
-        # self.send_message(ADMIN_ID, NOBODY)
         return False
 
     def __show_who_are_w_ureg(self):
@@ -263,7 +261,6 @@ class Tele_Bot(telebot.TeleBot):
             self.send_message(ADMIN_ID, "There are want's to unreg:\n{:s}".format(self.__model.get_ureg_req_list_str()))
             return True
 
-        # self.send_message(ADMIN_ID, NOBODY)
         return False
 
     def __show_alert(self):
