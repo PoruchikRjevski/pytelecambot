@@ -4,6 +4,7 @@ __pycache__/
 .idea/misc.xml
 LOG/
 OUT/
+misc/cameras.ini
 !L_F/im_0.jpg
 !im_1.jpg
 c_v
