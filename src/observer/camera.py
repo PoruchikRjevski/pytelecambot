@@ -278,7 +278,8 @@ class Camera:
 
         return frame
 
-    def __do_work_proc_t(self, working_f, now_frame_f, out):
+    def __do_work_proc(self, working_f, now_frame_f, out):
+        cam_h = cv2.VideoCapture(self.cam_id)
         cam_work = True
         rec_buff = queue.deque()
 
@@ -291,6 +292,7 @@ class Camera:
         last_frame_p = ''
 
         while working_f.value and cam_work:
+        # while working_f.value and cam_h.isOpened():
             cur_t = time.time()
             # check_t = cur_t
             rec_t_c = cur_t - rec_t
@@ -298,6 +300,7 @@ class Camera:
             if rec_t_c >= REC_TMT:
                 rec_t = rec_t_c
                 ret, frame = True, cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_{:s}.jpg".format(str(self.__c_id))))
+                # ret, frame = cam_h.read()
 
                 if not ret:
                     continue
@@ -344,6 +347,7 @@ class Camera:
             # when buffer
 
         self.state = False
+        cam_h.release()
 
     def __write_move_photo(self, frame):
         frame = self.__add_timestamp(frame)
@@ -408,7 +412,7 @@ class Camera:
                                                 None))
 
     def __start_proc(self):
-        self.__proc = Process(target=self.__do_work_proc_t,
+        self.__proc = Process(target=self.__do_work_proc,
                               args=(self.__working_f, self.__now_frame_f, self.__out_deq,))
         self.__proc.start()
 
