@@ -48,40 +48,29 @@ class Tele_Bot(telebot.TeleBot):
                                                         str(msg.chat.id),
                                                         msg.chat.first_name))
 
-            if t_comm == C_A_RES:
-                self.__restart_bot(msg)
-            elif t_comm == C_A_STOP:
-                self.__stop_bot(msg)
-            elif t_comm == C_CAMS:
-                self.__show_cams_m(msg)
-            elif t_comm == C_A_WHO_ARE or t_comm == C_A_WHO_R or t_comm == C_A_WHO_UR:
-                self.__show_who_are(msg)
-            elif t_comm == C_R_ACC or t_comm == C_R_KICK:
-                self.__do_reg(msg)
-            elif t_comm == C_R_NEXT:
-                self.__show_next_reg(msg)
-            elif t_comm == C_U_REG:
-                self.__add_req_reg(msg)
-            elif t_comm == C_V_UREG:
-                self.__add_req_ureg(msg)
-            elif t_comm == C_MENU or t_comm == C_BACK or t_comm == C_UPD:
-                self.__show_m(msg)
-            elif t_comm == C_C_ON or t_comm == C_C_OFF:
-                self.__cam_switch_state(msg)
-            elif t_comm == C_C_LAST:
-                self.__get_last_frame(msg)
-            elif t_comm in CAM_M:
-                self.__show_cam_m(msg)
+            if t_comm == C_A_RES: self.__restart_bot(msg)
+            elif t_comm == C_A_STOP: self.__stop_bot(msg)
+            elif t_comm == C_CAMS: self.__show_cams_m(msg)
+            elif t_comm == C_A_WHO_ARE or t_comm == C_A_WHO_R or t_comm == C_A_WHO_UR: self.__show_who_are(msg)
+            elif t_comm == C_R_ACC or t_comm == C_R_KICK: self.__do_reg(msg)
+            elif t_comm == C_R_NEXT: self.__show_next_reg(msg)
+            elif t_comm == C_U_REG: self.__add_req_reg(msg)
+            elif t_comm == C_V_UREG: self.__add_req_ureg(msg)
+            elif t_comm == C_MENU or t_comm == C_BACK or t_comm == C_UPD: self.__show_m(msg)
+            elif t_comm == C_C_ON or t_comm == C_C_OFF: self.__cam_switch_state(msg)
+            elif t_comm == C_C_LAST: self.__get_last_frame(msg)
+            elif t_comm == C_C_NOW: self.__get_now_frame(msg)
+            elif t_comm in CAM_M_L: self.__show_cam_m(msg)
 
     def __create_cam_menu(self):
         cams_n = self.__model.get_cameras_len()
 
         for n in range(cams_n):
             cam_name_tmp = self.__model.get_camera_by_i(n).cam_name
-            CAM_M.append(cam_name_tmp)
-            CAM_MARKUP.row(*[cam_name_tmp])
+            CAM_M_L.append(cam_name_tmp)
+            CAM_KB.row(*[cam_name_tmp])
 
-        CAM_MARKUP.row(*[C_MENU])
+        CAM_KB.row(*[C_MENU])
 
     def __def_reg(self):
         self.__reg_state = ''
@@ -133,24 +122,24 @@ class Tele_Bot(telebot.TeleBot):
 
     @hm_protect
     def __show_cams_m(self, msg):
-        self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_MARKUP)
+        self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_KB)
 
     @mid_protect
     def __show_viewer_m(self, msg):
-        self.send_message(msg.chat.id, TO_RULE, reply_markup=VIEWERS_MARK)
+        self.send_message(msg.chat.id, TO_RULE, reply_markup=VIEWERS_KB)
 
     def __show_undef_m(self, msg):
-        self.send_message(msg.chat.id, TO_RULE, reply_markup=UNDEF_MARK)
+        self.send_message(msg.chat.id, TO_RULE, reply_markup=UNDEF_KB)
 
     @hi_protect
     def __show_admin_m(self, _):
-        self.send_message(ADMIN_ID, TO_RULE, reply_markup=ADMIN_MARK)
+        self.send_message(ADMIN_ID, TO_RULE, reply_markup=ADMIN_KB)
 
     def __show_reg_m(self):
-        self.send_message(ADMIN_ID, TO_RULE, reply_markup=REG_MARK)
+        self.send_message(ADMIN_ID, TO_RULE, reply_markup=REG_KB)
 
     def __show_kick_m(self):
-        self.send_message(ADMIN_ID, TO_RULE, reply_markup=KICK_MARK)
+        self.send_message(ADMIN_ID, TO_RULE, reply_markup=KICK_KB)
 
     def __switch_sel_cam_state(self, state):
         self.__cam_sel_state = state
@@ -158,17 +147,20 @@ class Tele_Bot(telebot.TeleBot):
 
     @hm_protect
     def __show_cam_m(self, msg):
-        self.__cam_sel_id = CAM_M.index(msg.text)
+        self.__cam_sel_id = CAM_M_L.index(msg.text)
         self.__switch_sel_cam_state(self.__model.get_camera_by_i(self.__cam_sel_id).state)
 
-        self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_CTRL_MARK)
-        self.send_message(msg.chat.id, "Камера \"{:s}\" сейчас {:s}".format(msg.text,
-                                                                            self.__cam_sel_stat_str))
+        if self.__cam_sel_state:
+            self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_CTRL_OFF_KB)
+        else:
+            self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_CTRL_ON_KB)
+        # self.send_message(msg.chat.id, "Камера \"{:s}\" сейчас {:s}".format(msg.text,
+        #                                                                     self.__cam_sel_stat_str))
 
     def __show_bot_started(self):
         msg = BOT_START.format(ver.V_FULL)
         self.send_message(ADMIN_ID, msg)
-        self.send_message(ADMIN_ID, TO_RULE, reply_markup=GET_MARK)
+        self.send_message(ADMIN_ID, TO_RULE, reply_markup=GET_KB)
 
         # for i in range(0, self.__model.get_viewers_len()):
         #     (s_id, s_name) = self.__model.get_viewer_by_i(i)
@@ -253,7 +245,7 @@ class Tele_Bot(telebot.TeleBot):
             self.send_message(ADMIN_ID, "There are viewers:\n{:s}".format(self.__model.get_viewers_list_str()))
             return True
 
-        self.send_message(ADMIN_ID, NOBODY)
+        # self.send_message(ADMIN_ID, NOBODY)
         return False
 
     def __show_who_are_w_reg(self):
@@ -261,7 +253,7 @@ class Tele_Bot(telebot.TeleBot):
             self.send_message(ADMIN_ID, "There are want's to reg:\n{:s}".format(self.__model.get_reg_req_list_str()))
             return True
 
-        self.send_message(ADMIN_ID, NOBODY)
+        # self.send_message(ADMIN_ID, NOBODY)
         return False
 
     def __show_who_are_w_ureg(self):
@@ -269,21 +261,29 @@ class Tele_Bot(telebot.TeleBot):
             self.send_message(ADMIN_ID, "There are want's to unreg:\n{:s}".format(self.__model.get_ureg_req_list_str()))
             return True
 
-        self.send_message(ADMIN_ID, NOBODY)
+        # self.send_message(ADMIN_ID, NOBODY)
         return False
 
     def __show_alert(self):
         if self.__model.is_alerts_exists():
             alert = self.__model.get_alert()
 
-            self.send_message(ADMIN_ID, alert.msg)
             if alert.type == cmn.T_CAM_MOVE_PHOTO:
                 self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
                 out_log(alert.msg)
             elif alert.type == cmn.T_CAM_MOVE_MP4:
                 self.send_video(ADMIN_ID, data=open(alert.img, 'rb'))
-                # self.send_document(ADMIN_ID, data=open(alert.img, 'rb'))
-                # self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
+                out_log(alert.msg)
+            elif alert.type == cmn.T_CAM_SW:
+                if not alert.cam is None:
+                    chat = telebot.types.Chat(ADMIN_ID, 'private')
+                    msg = telebot.types.Message(0, 0, 0, chat, 0, [])
+                    msg.text = alert.cam
+                    self.__show_cam_m(msg)
+
+                self.send_message(ADMIN_ID, alert.msg)
+            elif alert.type == cmn.T_CAM_NOW_PHOTO:
+                self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
                 out_log(alert.msg)
 
             # do for all viewers
@@ -333,18 +333,29 @@ class Tele_Bot(telebot.TeleBot):
         if os.path.exists(last_f_p):
             self.send_photo(msg.chat.id, photo=open(last_f_p, 'rb'))
 
+    @hm_protect
+    def __get_now_frame(self, msg):
+        self.__model.get_now_photo(self.__cam_sel_id)
+
     def __do_acc(self):
         if not self.__reg_item is None:
             (a_id, a_name) = self.__reg_item
+
+            chat = telebot.types.Chat(a_id, 'private')
+            msg = telebot.types.Message(0, 0, 0, chat, 0, [])
 
             if self.__reg_state == C_A_WHO_R:
                 self.__model.add_viewer(a_id)
                 self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was added to viewers".format(a_id,
                                                                                                a_name))
+                self.send_message(a_id, "You are added to viewers")
             elif self.__reg_state == C_A_WHO_UR:
                 self.__model.kick_viewer(a_id)
                 self.send_message(ADMIN_ID, "User \"{:s} : {:s}\" was kicked from viewers".format(a_id,
                                                                                                   a_name))
+                self.send_message(a_id, "You are kicked from viewers")
+
+            self.__show_m(msg)
 
             return True
 
@@ -400,6 +411,8 @@ class Tele_Bot(telebot.TeleBot):
     def __main_loop(self):
         out_log("skipped: {:s}".format(str(self.__skip_updates_m())))
         self.__show_bot_started()
+
+        self.__model.check_cameras()
 
         while not self.__stop_f:
             # self.__get_updates_ex()

@@ -2,7 +2,7 @@ import os
 import time
 import datetime
 import threading
-import multiprocessing
+from multiprocessing import Value, Queue, Process
 import queue
 import copy
 
@@ -19,6 +19,8 @@ class Camera:
     def __init__(self, c_id, c_name, out_d, work_f=True):
         self.__c_id = c_id
         self.__c_name = c_name
+        self.__autostart = work_f
+
         self.__work_f = work_f
 
         self.__last_frame = None
@@ -27,9 +29,7 @@ class Camera:
         # self.__handle_cam = None
         self.__video_writer = None
 
-        self.__alert_deq = queue.deque()
-
-        self.__thread = threading.Thread(target=self.__do_work)
+        self.__out_deq = Queue()
 
         self.__path_d = os.path.join(out_d, "{:s}_{:s}".format(str(c_id),
                                                                c_name))
@@ -37,7 +37,7 @@ class Camera:
         self.__pre_rec_buff_sz = VIDEO_REC_TIME_PRE * VIDEO_REC_FPS
         self.__full_rec_buff_sz = VIDEO_REC_TIME_FULL * VIDEO_REC_FPS
         self.__rec_buff = queue.deque()
-        self.__frame_rec_tmt = 1 / VIDEO_REC_FPS
+        self.__frame_rec_half_tmt = 1 / 2 * VIDEO_REC_FPS
 
         self.__f_rec = False
         self.__f_wr_mp4 = False
@@ -50,13 +50,19 @@ class Camera:
 
         cmn.make_dir(self.__path_d)
 
+        # --
+        self.__working_f = Value("i", 1)
+        self.__working_f.value = False
+        self.__now_frame_f = Value("i", 1)
+        self.__now_frame_f.value = False
+
     def __init_camera(self):
         self.__handle_cam = cv2.VideoCapture(int(self.__c_id))
 
     def __get_frame(self):
         return self.__handle_cam.read()
 
-    def __get_frame_test(self):
+    def __get_test_frame(self):
         if self.__test:
             self.__test = False
             return cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_0.jpg"))
@@ -72,7 +78,7 @@ class Camera:
                     "{:s}_{:s} {:s}".format(str(self.__c_id),
                                                    self.__c_name,
                                                    self.__time_stamp),
-                    LAST_F_TXT_POS,
+                    (10, frame.shape[0] - 10),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     LAST_F_SIZE,
                     LAST_F_TXT_CLR,
@@ -169,11 +175,11 @@ class Camera:
                                                  mp4_lo_f))
 
         # send alerts
-        self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE_MP4,
-                                          cmn.MOVE_ALERT.format(str(self.__c_id),
+        self.__out_deq.append(cmn.Alert(cmn.T_CAM_MOVE_MP4,
+                                        cmn.MOVE_ALERT.format(str(self.__c_id),
                                                                 self.__c_name,
                                                                 self.__time_stamp),
-                                          mp4_lo_f))
+                                        mp4_lo_f))
 
         cmd_ex.run_cmd(CMD_FFMPEG_CONVERT.format(dir_p,
                                                  "",
@@ -186,11 +192,11 @@ class Camera:
         cmn.rem_dir(dir_p)
 
         # send alerts
-        self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE_MP4,
-                                          cmn.MOVE_ALERT.format(str(self.__c_id),
+        self.__out_deq.append(cmn.Alert(cmn.T_CAM_MOVE_MP4,
+                                        cmn.MOVE_ALERT.format(str(self.__c_id),
                                                                 self.__c_name,
                                                                 self.__time_stamp),
-                                          mp4_lo_f))
+                                        mp4_lo_f))
 
         self.__f_rec = False
         self.__f_wr_mp4 = False
@@ -237,10 +243,105 @@ class Camera:
                         obs_t = cur_t
 
             rec_t = time.time() - rec_t
-            if rec_t < self.__frame_rec_tmt:
-                time.sleep(self.__frame_rec_tmt - rec_t)
+            if rec_t < self.__frame_rec_half_tmt:
+                time.sleep(self.__frame_rec_half_tmt - rec_t)
 
         self.__deinit_camera()
+
+        self.state = False
+
+    def __add_frame_to_pre_buf(self, frame, buff):
+        if buff.__len__() >= PRE_REC_BUF_SZ:
+            buff.pop()
+
+        buff.append(frame)
+
+    def __write_now_frame(self, frame, ts_fr, ts_p):
+        frame = self.__add_frame_timestamp(frame, ts_fr)
+
+        path = os.path.join(self.__path_d, "{:s}_now.jpg".format(ts_p))
+
+        cv2.imwrite(path, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
+
+        return path
+
+    def __add_frame_timestamp(self, frame, ts):
+        cv2.putText(frame,
+                    "{:s}_{:s} {:s}".format(str(self.__c_id),
+                                                   self.__c_name,
+                                                   ts),
+                    (10, frame.shape[0] - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    LAST_F_SIZE,
+                    LAST_F_TXT_CLR,
+                    1)
+
+        return frame
+
+    def __do_work_proc_t(self, working_f, now_frame_f, out):
+        cam_work = True
+        rec_buff = queue.deque()
+
+        rec_t = time.time()
+        obs_t = time.time()
+
+        check_t = 0
+        timestamp = ''
+        last_frame_mv_d = None
+        last_frame_p = ''
+
+        while working_f.value and cam_work:
+            cur_t = time.time()
+            # check_t = cur_t
+            rec_t_c = cur_t - rec_t
+
+            if rec_t_c >= REC_TMT:
+                rec_t = rec_t_c
+                ret, frame = True, cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_{:s}.jpg".format(str(self.__c_id))))
+
+                if not ret:
+                    continue
+
+                timestamp = datetime.datetime.now()
+
+                obs_t_c = cur_t - obs_t
+                if obs_t_c >= OBSERVING_TMT:
+                    obs_t = obs_t_c
+
+                    # todo move detection
+
+                    # last_frame_mv_d = frame
+
+                self.__add_frame_to_pre_buf(frame, rec_buff)
+                if now_frame_f.value:
+                    ts_fr = timestamp.strftime(TIMESTAMP_FRAME_STR)
+                    ts_p = timestamp.strftime(TIMESTAMP_PATH_STR)
+
+                    out.put_nowait(cmn.Alert(cmn.T_CAM_NOW_PHOTO,
+                                             cmn.NOW_ALERT.format(str(self.cam_id),
+                                                                  self.cam_name,
+                                                                  ts_fr),
+                                             self.__write_now_frame(frame, ts_fr, ts_p),
+                                             self.__c_name))
+
+                    now_frame_f.value = False
+            else:
+                if rec_t_c <= REC_TMT_SHIFT:
+                    time.sleep(REC_TMT_SHIFT)
+
+            # check_t = time.time() - check_t
+            # print("frame time: {:s}".format(str(check_t)))
+
+
+
+            # if obs_t:
+            # detect moving
+            # write to file
+            # rewrite last_frame
+
+            # if moving is detected:
+            # start save frames to buffer
+            # when buffer
 
         self.state = False
 
@@ -251,11 +352,11 @@ class Camera:
 
         cv2.imwrite(move_ph_p, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
 
-        self.__alert_deq.append(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
-                                          cmn.MOVE_ALERT.format(str(self.__c_id),
+        self.__out_deq.append(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
+                                        cmn.MOVE_ALERT.format(str(self.__c_id),
                                                                 self.__c_name,
                                                                 self.__time_stamp),
-                                          move_ph_p))
+                                        move_ph_p))
 
     def __do_work_test(self):
         once = True
@@ -263,7 +364,7 @@ class Camera:
 
         while self.__work_f:
             rec_t = time.time()
-            frame = self.__get_frame_test()
+            frame = self.__get_test_frame()
             ret = True
 
             if ret:
@@ -272,36 +373,47 @@ class Camera:
 
                 frame = self.__process_img(frame)
 
-                self.__add_to_buf(frame)
+                # self.__add_to_buf(frame)
 
                 if not self.__f_rec:
-                    if once:
-                        once = False
-
-                        self.__f_rec = True
-                        self.__move_time_stamp = self.__time_stamp
-                        obs_t = cur_t
+                    if (cur_t - obs_t) >= OBSERVING_TMT:
+                        # if not self.__last_frame is None:
+                        #     if self.__compare_imgs(frame, self.__last_frame):
+                        #         self.__write_move_photo(frame)
+                        #         self.__f_rec = True
+                        #         self.__move_time_stamp = self.__time_stamp
 
                         # todo detach to other process
                         self.__write_frame(frame)
                         self.__last_frame = frame
+                        obs_t = cur_t
+
 
             rec_t = time.time() - rec_t
-            if rec_t < self.__frame_rec_tmt:
-                time.sleep(self.__frame_rec_tmt - rec_t)
+            if rec_t < self.__frame_rec_half_tmt:
+                time.sleep(self.__frame_rec_half_tmt - rec_t)
             else:
                 print("bad: {:s}".format(str(rec_t)))
 
         self.state = False
 
-    def accept_state(self):
-        if self.__work_f:
-            self.__alert_deq.append(cmn.Alert(cmn.T_CAM_SW, cmn.CAM_STARTED.format(self.__c_name,
-                                                                                   str(self.__work_f))))
-            self.__thread.start()
+    def autostart(self):
+        if self.__autostart:
+            self.__working_f.value = True
+            self.__start_proc()
+            self.__out_deq.put_nowait(cmn.Alert(cmn.T_CAM_SW,
+                                                cmn.CAM_STARTED.format(self.__c_name,
+                                                                       str(True)),
+                                                None,
+                                                None))
+
+    def __start_proc(self):
+        self.__proc = Process(target=self.__do_work_proc_t,
+                              args=(self.__working_f, self.__now_frame_f, self.__out_deq,))
+        self.__proc.start()
 
     def set_alert_deq(self, a_deq):
-        self.__alert_deq = a_deq
+        self.__out_deq = a_deq
 
     @property
     def cam_id(self):
@@ -313,20 +425,32 @@ class Camera:
 
     @property
     def state(self):
-        return self.__work_f
+        return self.__working_f.value
 
     @state.setter
     def state(self, state):
-        if state != self.__work_f:
-            self.__work_f = state
+        if state != self.__working_f.value:
+            self.__working_f.value = state
+
+            msg_t = ""
 
             if state:
-                self.accept_state()
+                self.__start_proc()
+                msg_t = cmn.CAM_STARTED.format(self.__c_name,
+                                               str(True))
             else:
-                self.__thread.join()
-                self.__alert_deq.append(cmn.Alert(cmn.T_CAM_SW, cmn.CAM_STOPPED.format(self.__c_name,
-                                                                                       str(self.__work_f))))
+                msg_t = cmn.CAM_STOPPED.format(self.__c_name,
+                                               str(False))
+
+            self.__out_deq.put_nowait(cmn.Alert(cmn.T_CAM_SW,
+                                         msg_t,
+                                         None,
+                                         self.__c_name))
 
     @property
     def last_frame(self):
         return self.__last_frame_p
+
+    def now_frame(self):
+        if not self.__now_frame_f.value:
+            self.__now_frame_f.value = True

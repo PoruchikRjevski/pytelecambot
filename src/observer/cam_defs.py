@@ -1,8 +1,18 @@
-OBSERVING_TMT               = 0.1 # s
 VIDEO_REC_TIME_FULL         = 5
-VIDEO_REC_TIME_PRE          = 1 # s
+VIDEO_REC_TIME_PRE          = 1
+
 VIDEO_REC_FPS               = 30
-VIDEO_REC_TMT               = 0.016
+OBSERVE_FPS                 = 10
+
+PRE_REC_BUF_SZ              = VIDEO_REC_TIME_PRE * VIDEO_REC_FPS
+FULL_REC_BUF_SZ             = VIDEO_REC_TIME_FULL * VIDEO_REC_FPS
+
+REC_TMT                     = 1 / VIDEO_REC_FPS
+REC_TMT_SHIFT               = REC_TMT / 2
+OBSERVING_TMT               = 1 / OBSERVE_FPS
+
+TIMESTAMP_FRAME_STR         = '%d %B %y %H:%M:%S'
+TIMESTAMP_PATH_STR          = '%d%m%y_%H%M%S'
 
 HI_W                        = 1280
 HI_H                        = 720

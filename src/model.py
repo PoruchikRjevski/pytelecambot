@@ -1,5 +1,6 @@
 import collections
 import queue
+from multiprocessing import Queue
 
 import base_daemon.base_daemon as b_d
 from observer.camera import *
@@ -16,7 +17,8 @@ class UserModel:
         self.__viewers = self.__bd_dmn.get_viewers()
         self.__cameras = []
 
-        self.__alerts = queue.deque()
+        # self.__alerts = queue.deque()
+        self.__alerts = Queue()
 
     def __set_alert_deq(self):
         for cam in self.__cameras:
@@ -104,7 +106,7 @@ class UserModel:
 
     def check_cameras(self):
         for cam in self.__cameras:
-            cam.accept_state()
+            cam.autostart()
 
     def switch_off_cameras(self):
         for cam in self.__cameras:
@@ -126,7 +128,11 @@ class UserModel:
         return self.get_camera_by_i(t_i).last_frame
 
     def is_alerts_exists(self):
-        return True if self.__alerts else False
+        return True if self.__alerts.qsize() > 0 else False
 
     def get_alert(self):
-        return self.__alerts.popleft()
+        # return self.__alerts.popleft()
+        return self.__alerts.get_nowait()
+
+    def get_now_photo(self, t_i):
+        self.get_camera_by_i(t_i).now_frame()

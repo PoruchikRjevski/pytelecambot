@@ -32,6 +32,7 @@ T_CAM_NOW_PHOTO          = 3
 CAM_STOPPED             = "Камера {:s} выключена"
 CAM_STARTED             = "Камера {:s} включена"
 MOVE_ALERT              = "Камера: {:s}_{:s}\nДвижение в {:s}!"
+NOW_ALERT               = "Камера: {:s}_{:s}\nФото в {:s}!"
 
 
 # common functions
@@ -50,7 +51,8 @@ def rem_dir(dir):
 
 
 class Alert:
-    def __init__(self, t, m, im=None):
+    def __init__(self, t, m, im=None, cam=None):
         self.type = t
         self.msg = m
+        self.cam = cam
         self.img = im
