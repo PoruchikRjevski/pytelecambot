@@ -87,7 +87,7 @@ for row in UNDEF_M_L:
 CAM_M_L                   = []
 CAM_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
 
-CAM_CTRL_M_L              = [[C_C_LAST, C_C_NOW],
+CAM_CTRL_M_L              = [[C_C_NOW],
                              [C_CAMS],
                              [C_MENU]]
 CAM_CTRL_ON_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)

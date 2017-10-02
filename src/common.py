@@ -27,6 +27,8 @@ T_CAM_MOVE_PHOTO         = 1
 T_CAM_SW                 = 2
 T_CAM_NOW_PHOTO          = 3
 
+TO_ALL                   = -1
+
 # alert msgs
 
 CAM_STOPPED             = "Камера {:s} выключена"
@@ -51,8 +53,9 @@ def rem_dir(dir):
 
 
 class Alert:
-    def __init__(self, t, m, im=None, cam=None):
+    def __init__(self, t, m, im=None, cam=None, who=TO_ALL):
         self.type = t
         self.msg = m
         self.cam = cam
         self.img = im
+        self.who = who

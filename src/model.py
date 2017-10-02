@@ -134,5 +134,5 @@ class UserModel:
         # return self.__alerts.popleft()
         return self.__alerts.get_nowait()
 
-    def get_now_photo(self, t_i):
-        self.get_camera_by_i(t_i).now_frame()
+    def get_now_photo(self, t_i, who):
+        self.get_camera_by_i(t_i).now_frame(who)

@@ -53,8 +53,9 @@ class Camera:
         # --
         self.__working_f = Value("i", 1)
         self.__working_f.value = False
-        self.__now_frame_f = Value("i", 1)
-        self.__now_frame_f.value = False
+        self.__now_frame_q = Queue()
+        # self.__now_frame_f = Value("i", 1)
+        # self.__now_frame_f.value = False
 
     def __init_camera(self):
         self.__handle_cam = cv2.VideoCapture(int(self.__c_id))
@@ -278,9 +279,9 @@ class Camera:
 
         return frame
 
-    def __do_work_proc(self, working_f, now_frame_f, out):
-        cam_h = cv2.VideoCapture(self.cam_id)
-        cam_work = True
+    def __do_work_proc(self, working_f, now_frame_q, out):
+        cam_h = cv2.VideoCapture(int(self.cam_id))
+        # cam_work = True
         rec_buff = queue.deque()
 
         rec_t = time.time()
@@ -291,16 +292,16 @@ class Camera:
         last_frame_mv_d = None
         last_frame_p = ''
 
-        while working_f.value and cam_work:
-        # while working_f.value and cam_h.isOpened():
+        # while working_f.value and cam_work:
+        while working_f.value and cam_h.isOpened():
             cur_t = time.time()
             # check_t = cur_t
             rec_t_c = cur_t - rec_t
 
             if rec_t_c >= REC_TMT:
                 rec_t = rec_t_c
-                ret, frame = True, cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_{:s}.jpg".format(str(self.__c_id))))
-                # ret, frame = cam_h.read()
+                # ret, frame = True, cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_{:s}.jpg".format(str(self.__c_id))))
+                ret, frame = cam_h.read()
 
                 if not ret:
                     continue
@@ -316,7 +317,9 @@ class Camera:
                     # last_frame_mv_d = frame
 
                 self.__add_frame_to_pre_buf(frame, rec_buff)
-                if now_frame_f.value:
+
+                while now_frame_q.qsize() > 0:
+
                     ts_fr = timestamp.strftime(TIMESTAMP_FRAME_STR)
                     ts_p = timestamp.strftime(TIMESTAMP_PATH_STR)
 
@@ -325,9 +328,8 @@ class Camera:
                                                                   self.cam_name,
                                                                   ts_fr),
                                              self.__write_now_frame(frame, ts_fr, ts_p),
-                                             self.__c_name))
-
-                    now_frame_f.value = False
+                                             self.__c_name,
+                                             str(now_frame_q.get_nowait())))
             else:
                 if rec_t_c <= REC_TMT_SHIFT:
                     time.sleep(REC_TMT_SHIFT)
@@ -413,7 +415,7 @@ class Camera:
 
     def __start_proc(self):
         self.__proc = Process(target=self.__do_work_proc,
-                              args=(self.__working_f, self.__now_frame_f, self.__out_deq,))
+                              args=(self.__working_f, self.__now_frame_q, self.__out_deq,))
         self.__proc.start()
 
     def set_alert_deq(self, a_deq):
@@ -455,6 +457,7 @@ class Camera:
     def last_frame(self):
         return self.__last_frame_p
 
-    def now_frame(self):
-        if not self.__now_frame_f.value:
-            self.__now_frame_f.value = True
+    def now_frame(self, who):
+        self.__now_frame_q.put_nowait(who)
+        # if not self.__now_frame_f.value:
+            # self.__now_frame_f.value = True

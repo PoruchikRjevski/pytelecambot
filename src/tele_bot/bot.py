@@ -31,6 +31,8 @@ class Tele_Bot(telebot.TeleBot):
         self.__cam_sel_state = None
         self.__cam_sel_state_str = None
 
+        self.__now_requester = None
+
         self.__create_cam_menu()
 
         @bot.message_handler(commands=[C_START, C_HELP])
@@ -268,23 +270,41 @@ class Tele_Bot(telebot.TeleBot):
         if self.__model.is_alerts_exists():
             alert = self.__model.get_alert()
 
-            if alert.type == cmn.T_CAM_MOVE_PHOTO:
-                self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
-                out_log(alert.msg)
-            elif alert.type == cmn.T_CAM_MOVE_MP4:
-                self.send_video(ADMIN_ID, data=open(alert.img, 'rb'))
-                out_log(alert.msg)
+            if alert.type == cmn.T_CAM_NOW_PHOTO:
+                self.send_photo(int(alert.who), photo=open(alert.img, 'rb'))
             elif alert.type == cmn.T_CAM_SW:
-                if not alert.cam is None:
-                    chat = telebot.types.Chat(ADMIN_ID, 'private')
-                    msg = telebot.types.Message(0, 0, 0, chat, 0, [])
-                    msg.text = alert.cam
+                chat = telebot.types.Chat(ADMIN_ID, 'private')
+                msg = telebot.types.Message(0, 0, 0, chat, 0, [])
+                msg.text = alert.cam
+                if alert.cam is not None:
                     self.__show_cam_m(msg)
-
                 self.send_message(ADMIN_ID, alert.msg)
-            elif alert.type == cmn.T_CAM_NOW_PHOTO:
-                self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
-                out_log(alert.msg)
+
+                for i in range(0, self.__model.get_viewers_len()):
+                    (s_id, s_name) = self.__model.get_viewer_by_i(i)
+                    if alert.cam is not None:
+                        msg.chat.id = s_id
+                        self.__show_cam_m(msg)
+
+                    self.send_message(s_id, alert.msg)
+
+            # if alert.type == cmn.T_CAM_MOVE_PHOTO:
+            #     self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
+            #     out_log(alert.msg)
+            # elif alert.type == cmn.T_CAM_MOVE_MP4:
+            #     self.send_video(ADMIN_ID, data=open(alert.img, 'rb'))
+            #     out_log(alert.msg)
+            # elif alert.type == cmn.T_CAM_SW:
+            #     if not alert.cam is None:
+            #         chat = telebot.types.Chat(ADMIN_ID, 'private')
+            #         msg = telebot.types.Message(0, 0, 0, chat, 0, [])
+            #         msg.text = alert.cam
+            #         self.__show_cam_m(msg)
+            #
+            #     self.send_message(ADMIN_ID, alert.msg)
+            # elif alert.type == cmn.T_CAM_NOW_PHOTO:
+            #     self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
+            #     out_log(alert.msg)
 
             # do for all viewers
 
@@ -335,7 +355,7 @@ class Tele_Bot(telebot.TeleBot):
 
     @hm_protect
     def __get_now_frame(self, msg):
-        self.__model.get_now_photo(self.__cam_sel_id)
+        self.__model.get_now_photo(self.__cam_sel_id, msg.chat.id)
 
     def __do_acc(self):
         if not self.__reg_item is None:
