@@ -22,7 +22,7 @@ LO_H                        = 480
 
 LAST_F_SIZE                 = 0.5
 LAST_F_TXT_POS              = (15, 15)
-LAST_F_TXT_CLR              = (255, 255, 255)
+LAST_F_TXT_CLR              = (255, 0, 0)
 
 LAST_F_JPG_Q                = 50
 

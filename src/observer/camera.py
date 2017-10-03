@@ -260,9 +260,7 @@ class Camera:
 
         buff.put_nowait(frame)
 
-    def __write_now_frame(self, frame, ts_fr, ts_p):
-        frame = self.__add_frame_timestamp(frame, ts_fr)
-
+    def __write_now_frame(self, frame, ts_p):
         path = os.path.join(self.__path_d, "{:s}_now.jpg".format(ts_p))
 
         cv2.imwrite(path, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
@@ -282,12 +280,17 @@ class Camera:
 
         return frame
 
+    def __resize_frame(self, frame, to_w, to_h):
+        img = self.__decrease_img(frame, to_w, to_h)
+
+        return img
+
     def __check_moving(self, cur_fr, l_fr):
         pass
 
     def __do_work_proc(self, working_f, now_frame_q, out, rec_f, rec_buf):
-        cam_h = cv2.VideoCapture(int(self.cam_id))
-        # cam_work = True
+        # cam_h = cv2.VideoCapture(int(self.cam_id))
+        cam_work = True
 
         rec_fr_cntr = 0
         recording = False
@@ -301,52 +304,64 @@ class Camera:
         last_frame = None
         last_frame_p = ''
 
-        # while working_f.value and cam_work:
-        while working_f.value and cam_h.isOpened():
+        while working_f.value and cam_work:
+        # while working_f.value and cam_h.isOpened():
             cur_t = time.time()
             # check_t = cur_t
             rec_t_c = cur_t - rec_t
 
             if rec_t_c >= REC_TMT:
                 rec_t = rec_t_c
-                # ret, frame = True, cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_{:s}.jpg".format(str(self.__c_id))))
-                ret, frame = cam_h.read()
+                ret, frame = True, cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_{:s}.jpg".format(str(self.__c_id))))
+                # ret, frame = cam_h.read()
 
                 if not ret:
                     continue
+
+                # process frame
+                frame_rs = self.__resize_frame(frame, LO_W, LO_H)
 
                 timestamp = datetime.datetime.now()
                 ts_fr = timestamp.strftime(TIMESTAMP_FRAME_STR)
                 ts_p = timestamp.strftime(TIMESTAMP_PATH_STR)
 
-                frame_ts = self.__add_frame_timestamp(frame, ts_fr)
+                frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
 
-                if recording:
-                    if rec_f.Value:
-                        rec_buf.put_nowait(frame_ts)
-                        rec_fr_cntr += 1
+                # if recording:
+                #     if rec_f.Value:
+                #         rec_buf.put_nowait(frame_ts)
+                #         rec_fr_cntr += 1
+                #
+                #         if rec_fr_cntr >= FULL_REC_BUF_SZ:
+                #             rec_buf.put_nowait(None)
+                #             rec_buf.put_nowait(mv_detected_ts)
+                #             recording = False
+                    # else:
+                        # self.__add_frame_to_pre_buf(frame_ts, rec_buf)
 
-                        if rec_fr_cntr >= FULL_REC_BUF_SZ:
-                            rec_buf.put_nowait(None)
-                            rec_buf.put_nowait(mv_detected_ts)
-                            recording = False
-                    else:
-                        self.__add_frame_to_pre_buf(frame_ts, rec_buf)
+                # if rec_fr_cntr >= FULL_REC_BUF_SZ:
+                #     rec_buf.put_nowait()
 
                 obs_t_c = cur_t - obs_t
                 if obs_t_c >= OBSERVING_TMT:
                     obs_t = obs_t_c
 
-                    if not rec_f.value and not recording:
-                        if last_frame is None:
-                            last_frame = frame
-                        else:
-                            if self.__check_moving(frame, last_frame):
-                                rec_f.value = True
-                                recording = True
-                                mv_detected_ts = ts_p
-                            else:
-                                last_frame = frame
+                    # todo add selecting area for detect move
+
+                    # if self.__check_moving(frame, last_frame):
+                    #     pass
+                        # rec_f.value = True
+                        # recording = True
+                        # mv_detected_ts = ts_p
+
+                    # if not rec_f.value and not recording:
+                    #     if last_frame is not None:
+                    #         if self.__check_moving(frame, last_frame):
+                    #             rec_f.value = True
+                    #             recording = True
+                    #             mv_detected_ts = ts_p
+
+                    last_frame = frame
 
                 if now_frame_q.qsize() > 0:
                     file_p = self.__write_now_frame(frame_ts, ts_p)
@@ -363,22 +378,8 @@ class Camera:
                 if rec_t_c <= REC_TMT_SHIFT:
                     time.sleep(REC_TMT_SHIFT)
 
-            # check_t = time.time() - check_t
-            # print("frame time: {:s}".format(str(check_t)))
-
-
-
-            # if obs_t:
-            # detect moving
-            # write to file
-            # rewrite last_frame
-
-            # if moving is detected:
-            # start save frames to buffer
-            # when buffer
-
         self.state = False
-        cam_h.release()
+        # cam_h.release()
 
     def __do_write_proc(self, working_f, rec_f, rec_buf):
         while working_f.value:
@@ -403,6 +404,40 @@ class Camera:
                     pass
             else:
                 time.sleep(1)
+
+    def __detect_move_test_proc(self):
+        print("start move detect")
+        last_f = cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_3.jpg"))
+        cur_f = cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_2.jpg"))
+
+        cur_t = time.time()
+
+        last_f_pr = self.__proc_for_detect(last_f)
+        cur_f_pr = self.__proc_for_detect(cur_f)
+
+        delta = cv2.absdiff(last_f_pr, cur_f_pr)
+
+        thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
+
+        thresh = cv2.dilate(thresh, None, iterations=1)
+
+        im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        for c in cnts:
+            if cv2.contourArea(c) < 200:
+                continue
+
+            (x, y, w, h) = cv2.boundingRect(c)
+            cv2.rectangle(cur_f, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        print("finish move detect, {:s}".format(str(time.time() - cur_t)))
+        cv2.imwrite(os.path.join(os.getcwd(), cmn.LAST_D_P, "post.jpg"), cur_f, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
+
+    def __proc_for_detect(self, frame):
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame = cv2.GaussianBlur(frame, (21, 21), 0)
+
+        return frame
 
     def __write_move_photo(self, frame):
         frame = self.__add_timestamp(frame)
@@ -467,18 +502,20 @@ class Camera:
                                                 None))
 
     def __start_procs(self):
-        self.__proc_rx = Process(target=self.__do_work_proc,
-                                 args=(self.__working_f,
-                                       self.__now_frame_q,
-                                       self.__out_deq,
-                                       self.__rec_f,
-                                       self.__rec_buff_q,))
-        self.__proc_rec = Process(target=self.__do_write_proc,
-                                 args=(self.__working_f,
-                                       self.__rec_f,
-                                       self.__rec_buff_q,))
-        self.__proc_rec.start()
-        self.__proc_rx.start()
+        # self.__proc_rx = Process(target=self.__do_work_proc,
+        #                          args=(self.__working_f,
+        #                                self.__now_frame_q,
+        #                                self.__out_deq,
+        #                                self.__rec_f,
+        #                                self.__rec_buff_q,))
+        # self.__proc_rec = Process(target=self.__do_write_proc,
+        #                          args=(self.__working_f,
+        #                                self.__rec_f,
+        #                                self.__rec_buff_q,))
+        self.__proc_test = Process(target=self.__detect_move_test_proc)
+        self.__proc_test.start()
+        # self.__proc_rec.start()
+        # self.__proc_rx.start()
 
     def set_alert_deq(self, a_deq):
         self.__out_deq = a_deq
