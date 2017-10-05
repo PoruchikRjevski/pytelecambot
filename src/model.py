@@ -17,12 +17,15 @@ class UserModel:
         self.__viewers = self.__bd_dmn.get_viewers()
         self.__cameras = []
 
-        # self.__alerts = queue.deque()
         self.__alerts = Queue()
 
     def __set_alert_deq(self):
         for cam in self.__cameras:
             cam.set_alert_deq(self.__alerts)
+
+    @property
+    def alerts(self):
+        return self.__alerts
 
     def get_viewers_len(self):
         return len(self.__viewers)

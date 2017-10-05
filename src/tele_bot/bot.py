@@ -15,13 +15,15 @@ __all__ = ['Tele_Bot']
 
 
 class Tele_Bot(telebot.TeleBot):
-    def __init__(self, u_model):
+    def __init__(self, u_model, m_daemon):
         super().__init__(TOKEN)
         bot = self
 
         self.__stop_f = False
 
         self.__model = u_model
+        self.__machine_daemon = m_daemon
+        self.__machine_daemon.set_alerts(self.__model.alerts)
 
         self.__reg_state = ''
         self.__reg_pos = None
@@ -51,7 +53,7 @@ class Tele_Bot(telebot.TeleBot):
                                                         msg.chat.first_name))
 
             if t_comm == C_A_RES: self.__restart_bot(msg)
-            elif t_comm == C_A_RES: self.__stop_bot(msg)
+            elif t_comm == C_A_STOP: self.__stop_bot(msg)
             elif t_comm == C_CAMS: self.__show_cams_m(msg)
             elif t_comm == C_A_WHO_ARE or t_comm == C_A_WHO_R or t_comm == C_A_WHO_UR: self.__show_who_are(msg)
             elif t_comm == C_R_ACC or t_comm == C_R_KICK: self.__do_reg(msg)
@@ -449,6 +451,7 @@ class Tele_Bot(telebot.TeleBot):
         self.__show_bot_started()
 
         self.__model.check_cameras()
+        self.__machine_daemon.start_work()
 
         while not self.__stop_f:
             # self.__get_updates_ex()
@@ -458,6 +461,7 @@ class Tele_Bot(telebot.TeleBot):
             self.__show_alert()
 
         self.__model.switch_off_cameras()
+        self.__machine_daemon.stop_work()
 
         self.__show_bot_stopped()
 

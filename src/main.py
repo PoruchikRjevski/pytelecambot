@@ -17,6 +17,7 @@ from model import *
 from observer import *
 from config_loader import *
 from time_checker import *
+from machine_daemon import *
 
 
 def update_ver():
@@ -49,9 +50,9 @@ if __name__ == '__main__':
     user_mod = UserModel(os.path.join(os.getcwd(), cmn.INI_PATH))
     user_mod.add_cameras(cameras_l)
 
-    user_mod.add_reg_req("123", "asd")
+    machine_daemon = MachineDaemon()
 
-    tele_bot = Tele_Bot(user_mod)
+    tele_bot = Tele_Bot(user_mod, machine_daemon)
     # tb_t = threading.Thread(target=tele_bot.do_work)
 
     # main cycle
