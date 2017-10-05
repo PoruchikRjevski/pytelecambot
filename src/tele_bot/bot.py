@@ -427,20 +427,20 @@ class Tele_Bot(telebot.TeleBot):
 
     def __main_loop(self):
         out_log("skipped: {:s}".format(str(self.__skip_updates_m())))
-        self.__show_bot_started()
+        # self.__show_bot_started()
 
         self.__model.check_cameras()
 
-        while not self.__stop_f:
-            # self.__get_updates_ex()
-            upds_num = self.__get_updates()
-            if upds_num:
-                out_log("rx updates: {:s}".format(str(upds_num)))
-            self.__show_alert()
+        # while not self.__stop_f:
+        #     # self.__get_updates_ex()
+        #     upds_num = self.__get_updates()
+        #     if upds_num:
+        #         out_log("rx updates: {:s}".format(str(upds_num)))
+        #     self.__show_alert()
 
         self.__model.switch_off_cameras()
 
-        self.__show_bot_stopped()
+        # self.__show_bot_stopped()
 
     def do_work(self):
         self.__main_loop()

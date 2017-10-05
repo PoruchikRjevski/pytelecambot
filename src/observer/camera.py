@@ -407,8 +407,8 @@ class Camera:
 
     def __detect_move_test_proc(self):
         print("start move detect")
-        last_f = cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_3.jpg"))
-        cur_f = cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_2.jpg"))
+        last_f = cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_6.jpg"))
+        cur_f = cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_7.jpg"))
 
         cur_t = time.time()
 
@@ -417,14 +417,17 @@ class Camera:
 
         delta = cv2.absdiff(last_f_pr, cur_f_pr)
 
-        thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
+        # 25, 255
+        thresh = cv2.threshold(delta, 5, 255, cv2.THRESH_BINARY)[1]
 
         thresh = cv2.dilate(thresh, None, iterations=1)
 
         im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+        # todo need to add setting by admin contours range with callback inline menu
+
         for c in cnts:
-            if cv2.contourArea(c) < 200:
+            if cv2.contourArea(c) < 2000 or cv2.contourArea(c) > 30000:
                 continue
 
             (x, y, w, h) = cv2.boundingRect(c)
