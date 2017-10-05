@@ -56,6 +56,7 @@ class Tele_Bot(telebot.TeleBot):
             elif t_comm == C_A_STOP: self.__stop_bot(msg)
             elif t_comm == C_CAMS: self.__show_cams_m(msg)
             elif t_comm == C_A_WHO_ARE or t_comm == C_A_WHO_R or t_comm == C_A_WHO_UR: self.__show_who_are(msg)
+            elif t_comm == C_A_SYS_INFO: self.__get_system_info(msg)
             elif t_comm == C_R_ACC or t_comm == C_R_KICK: self.__do_reg(msg)
             elif t_comm == C_R_NEXT: self.__show_next_reg(msg)
             elif t_comm == C_U_REG: self.__add_req_reg(msg)
@@ -282,6 +283,8 @@ class Tele_Bot(telebot.TeleBot):
 
             if alert.type == cmn.T_CAM_NOW_PHOTO:
                 self.send_photo(int(alert.who), photo=open(alert.img, 'rb'))
+            elif alert.type == cmn.T_SYS_NOW_INFO:
+                self.send_message(ADMIN_ID, alert.msg)
             elif alert.type == cmn.T_CAM_SW:
                 chat = telebot.types.Chat(ADMIN_ID, 'private')
                 msg = telebot.types.Message(0, 0, 0, chat, 0, [])
@@ -374,6 +377,10 @@ class Tele_Bot(telebot.TeleBot):
     @hm_protect
     def __get_now_frame(self, msg):
         self.__model.get_now_photo(self.__cam_sel_id, msg.chat.id)
+
+    @hi_protect
+    def __get_system_info(self, _):
+        self.__machine_daemon.get_now_status()
 
     def __do_acc(self):
         if not self.__reg_item is None:

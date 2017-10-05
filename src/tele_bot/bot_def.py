@@ -29,6 +29,7 @@ C_A_STOP                = 'stop'
 C_A_WHO_R               = 'reg list'
 C_A_WHO_UR              = 'unreg list'
 C_A_WHO_ARE             = 'viewers'
+C_A_SYS_INFO            = "sys info"
 
 C_R_ACC                 = 'accept'
 C_R_DECL                = 'decl'
@@ -54,6 +55,7 @@ for row in GET_M_L:
 ADMIN_M_L                 = [[C_A_STOP, C_A_RES],
                              [C_A_WHO_R, C_A_WHO_UR, C_A_WHO_ARE],
                              [C_CAMS],
+                             [C_A_SYS_INFO],
                              [C_UPD]]
 ADMIN_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
 for row in ADMIN_M_L:

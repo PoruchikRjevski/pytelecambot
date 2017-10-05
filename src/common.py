@@ -26,7 +26,8 @@ T_CAM_MOVE_MP4           = 0
 T_CAM_MOVE_PHOTO         = 1
 T_CAM_SW                 = 2
 T_CAM_NOW_PHOTO          = 3
-T_CAM_MD_SW              = 4
+T_SYS_NOW_INFO           = 4
+
 
 TO_ALL                   = -1
 
