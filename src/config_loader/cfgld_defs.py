@@ -1,2 +1,5 @@
 CAM_NAME                = "name"
 CAM_AUTOSTART           = "autostart"
+CAM_MOTION_DETECT       = "motion_detect"
+CAM_CONT_MIN            = "contour_min"
+CAM_CONT_MAX            = "contour_max"

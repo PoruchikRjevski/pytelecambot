@@ -16,10 +16,13 @@ import cv2
 
 
 class Camera:
-    def __init__(self, c_id, c_name, out_d, work_f=True):
+    def __init__(self, c_id, c_name, out_d, work_f=True, m_detect=False, cont_min=0, cont_max=100):
         self.__c_id = c_id
         self.__c_name = c_name
         self.__autostart = work_f
+        self.__motion_detection = m_detect
+        self.__contours_min = cont_min
+        self.__contours_max = cont_max
 
         self.__work_f = work_f
 
@@ -57,6 +60,9 @@ class Camera:
         self.__rec_buff_q = Queue()
         self.__rec_f = Value("i", 1)
         self.__rec_f.value = False
+        self.__motion_detect_f = Value("i", 1)
+        self.__motion_detect_f.value = m_detect
+
         # self.__now_frame_f = Value("i", 1)
         # self.__now_frame_f.value = False
 
@@ -288,7 +294,7 @@ class Camera:
     def __check_moving(self, cur_fr, l_fr):
         pass
 
-    def __do_work_proc(self, working_f, now_frame_q, out, rec_f, rec_buf):
+    def __do_work_proc(self, working_f, md_f, now_frame_q, out, rec_f, rec_buf):
         # cam_h = cv2.VideoCapture(int(self.cam_id))
         cam_work = True
 
@@ -505,20 +511,21 @@ class Camera:
                                                 None))
 
     def __start_procs(self):
-        # self.__proc_rx = Process(target=self.__do_work_proc,
-        #                          args=(self.__working_f,
-        #                                self.__now_frame_q,
-        #                                self.__out_deq,
-        #                                self.__rec_f,
-        #                                self.__rec_buff_q,))
-        # self.__proc_rec = Process(target=self.__do_write_proc,
-        #                          args=(self.__working_f,
-        #                                self.__rec_f,
-        #                                self.__rec_buff_q,))
-        self.__proc_test = Process(target=self.__detect_move_test_proc)
-        self.__proc_test.start()
-        # self.__proc_rec.start()
-        # self.__proc_rx.start()
+        self.__proc_rx = Process(target=self.__do_work_proc,
+                                 args=(self.__working_f,
+                                       self.__motion_detect_f,
+                                       self.__now_frame_q,
+                                       self.__out_deq,
+                                       self.__rec_f,
+                                       self.__rec_buff_q,))
+        self.__proc_rec = Process(target=self.__do_write_proc,
+                                 args=(self.__working_f,
+                                       self.__rec_f,
+                                       self.__rec_buff_q,))
+        # self.__proc_test = Process(target=self.__detect_move_test_proc)
+        # self.__proc_test.start()
+        self.__proc_rec.start()
+        self.__proc_rx.start()
 
     def set_alert_deq(self, a_deq):
         self.__out_deq = a_deq
@@ -551,9 +558,32 @@ class Camera:
                                                str(False))
 
             self.__out_deq.put_nowait(cmn.Alert(cmn.T_CAM_SW,
-                                         msg_t,
-                                         None,
-                                         self.__c_name))
+                                                msg_t,
+                                                None,
+                                                self.__c_name))
+
+    @property
+    def motion_detect(self):
+        return self.__motion_detect_f.value
+
+    @motion_detect.setter
+    def motion_detect(self, state):
+        if state != self.__motion_detect_f.value:
+            self.__motion_detect_f.value = state
+
+            msg_t = ""
+
+            if state:
+                msg_t = cmn.CAM_MD_STARTED.format(self.__c_name,
+                                                  str(True))
+            else:
+                msg_t = cmn.CAM_MD_STOPPED.format(self.__c_name,
+                                                  str(False))
+
+            self.__out_deq.put_nowait(cmn.Alert(cmn.T_CAM_SW,
+                                                msg_t,
+                                                None,
+                                                self.__c_name))
 
     @property
     def last_frame(self):

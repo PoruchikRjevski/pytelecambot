@@ -29,12 +29,21 @@ class ConfigLoader:
             c_id = block
             c_name = ""
             c_as = False
+            c_md = False
+            c_c_min = 0
+            c_c_max = 100
             for opt in self.__cfg.options(block):
                 if opt == CAM_NAME:
                     c_name = self.__cfg.get(block, opt)
                 elif opt == CAM_AUTOSTART:
                     c_as = True if self.__cfg.get(block, opt) == "True" else False
+                elif opt == CAM_MOTION_DETECT:
+                    c_md = True if self.__cfg.get(block, opt) == "True" else False
+                elif opt == CAM_CONT_MIN:
+                    c_c_min = int(self.__cfg.get(block, opt))
+                elif opt == CAM_CONT_MAX:
+                    c_c_max = int(self.__cfg.get(block, opt))
 
-            cams_l.append(Camera(c_id, c_name, out_d, c_as))
+            cams_l.append(Camera(c_id, c_name, out_d, c_as, c_md, c_c_min, c_c_max))
 
         return cams_l

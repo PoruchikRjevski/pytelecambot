@@ -35,10 +35,14 @@ C_R_DECL                = 'decl'
 C_R_NEXT                = 'next'
 C_R_KICK                = 'kick'
 
-C_C_ON                  = 'Включить'
-C_C_OFF                 = 'Выключить'
+C_C_ON                  = 'Включить камеру'
+C_C_OFF                 = 'Выключить камеру'
+C_MD_ON                 = 'Включить детектирование'
+C_MD_OFF                = 'Выключить детектирование'
 C_C_LAST                = 'Последнее'
 C_C_NOW                 = 'Сфотографировать'
+
+NO_DEL_L                = [C_C_NOW, C_R_ACC, C_R_KICK, C_R_NEXT, C_U_REG, C_V_UREG, C_A_WHO_ARE, C_A_WHO_R, C_A_WHO_UR]
 
 # keyboards
 GET_M_L                   = [[C_MENU]]
@@ -90,14 +94,14 @@ CAM_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
 CAM_CTRL_M_L              = [[C_C_NOW],
                              [C_CAMS],
                              [C_MENU]]
-CAM_CTRL_ON_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-CAM_CTRL_ON_KB.row(*[C_C_ON])
-CAM_CTRL_OFF_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-CAM_CTRL_OFF_KB.row(*[C_C_OFF])
-
-for row in CAM_CTRL_M_L:
-    CAM_CTRL_ON_KB.row(*row)
-    CAM_CTRL_OFF_KB.row(*row)
+# CAM_CTRL_ON_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+# CAM_CTRL_ON_KB.row(*[C_C_ON])
+# CAM_CTRL_OFF_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+# CAM_CTRL_OFF_KB.row(*[C_C_OFF])
+#
+# for row in CAM_CTRL_M_L:
+#     CAM_CTRL_ON_KB.row(*row)
+#     CAM_CTRL_OFF_KB.row(*row)
 
 
 

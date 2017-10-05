@@ -118,6 +118,9 @@ class UserModel:
     def camera_switch_state(self, t_i, state):
         self.get_camera_by_i(t_i).state = state
 
+    def camera_switch_md_state(self, t_i, state):
+        self.get_camera_by_i(t_i).motion_detect = state
+
     def get_camera_by_i(self, t_i):
         if len(self.__cameras) > t_i:
             return self.__cameras[t_i]

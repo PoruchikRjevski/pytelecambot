@@ -26,6 +26,7 @@ T_CAM_MOVE_MP4           = 0
 T_CAM_MOVE_PHOTO         = 1
 T_CAM_SW                 = 2
 T_CAM_NOW_PHOTO          = 3
+T_CAM_MD_SW              = 4
 
 TO_ALL                   = -1
 
@@ -33,6 +34,8 @@ TO_ALL                   = -1
 
 CAM_STOPPED             = "Камера {:s} выключена"
 CAM_STARTED             = "Камера {:s} включена"
+CAM_MD_STARTED          = "{:s} Детектирование включено"
+CAM_MD_STOPPED          = "{:s} Детектирование выключено"
 MOVE_ALERT              = "Камера: {:s}_{:s}\nДвижение в {:s}!"
 NOW_ALERT               = "Камера: {:s}_{:s}\nФото в {:s}!"
 

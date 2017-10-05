@@ -51,7 +51,7 @@ class Tele_Bot(telebot.TeleBot):
                                                         msg.chat.first_name))
 
             if t_comm == C_A_RES: self.__restart_bot(msg)
-            elif t_comm == C_A_STOP: self.__stop_bot(msg)
+            elif t_comm == C_A_RES: self.__stop_bot(msg)
             elif t_comm == C_CAMS: self.__show_cams_m(msg)
             elif t_comm == C_A_WHO_ARE or t_comm == C_A_WHO_R or t_comm == C_A_WHO_UR: self.__show_who_are(msg)
             elif t_comm == C_R_ACC or t_comm == C_R_KICK: self.__do_reg(msg)
@@ -60,6 +60,7 @@ class Tele_Bot(telebot.TeleBot):
             elif t_comm == C_V_UREG: self.__add_req_ureg(msg)
             elif t_comm == C_MENU or t_comm == C_BACK or t_comm == C_UPD: self.__show_m(msg)
             elif t_comm == C_C_ON or t_comm == C_C_OFF: self.__cam_switch_state(msg)
+            elif t_comm == C_MD_ON or t_comm == C_MD_OFF: self.__cam_switch_md_state(msg)
             elif t_comm == C_C_LAST: self.__get_last_frame(msg)
             elif t_comm == C_C_NOW: self.__get_now_frame(msg)
             elif t_comm in CAM_M_L: self.__show_cam_m(msg)
@@ -152,12 +153,22 @@ class Tele_Bot(telebot.TeleBot):
         self.__cam_sel_id = CAM_M_L.index(msg.text)
         self.__switch_sel_cam_state(self.__model.get_camera_by_i(self.__cam_sel_id).state)
 
-        if self.__cam_sel_state:
-            self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_CTRL_OFF_KB)
+        CAM_CTRL_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+        if self.__model.get_camera_by_i(self.__cam_sel_id).state:
+            CAM_CTRL_KB.row(*[C_C_OFF])
         else:
-            self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_CTRL_ON_KB)
-        # self.send_message(msg.chat.id, "Камера \"{:s}\" сейчас {:s}".format(msg.text,
-        #                                                                     self.__cam_sel_stat_str))
+            CAM_CTRL_KB.row(*[C_C_ON])
+
+        if self.__model.get_camera_by_i(self.__cam_sel_id).motion_detect:
+            CAM_CTRL_KB.row(*[C_MD_OFF])
+        else:
+            CAM_CTRL_KB.row(*[C_MD_ON])
+
+        for row in CAM_CTRL_M_L:
+            CAM_CTRL_KB.row(*row)
+
+        self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_CTRL_KB)
 
     def __show_bot_started(self):
         msg = BOT_START.format(ver.V_FULL)
@@ -273,6 +284,7 @@ class Tele_Bot(telebot.TeleBot):
                 chat = telebot.types.Chat(ADMIN_ID, 'private')
                 msg = telebot.types.Message(0, 0, 0, chat, 0, [])
                 msg.text = alert.cam
+
                 if alert.cam is not None:
                     self.__show_cam_m(msg)
                 self.send_message(ADMIN_ID, alert.msg)
@@ -343,6 +355,13 @@ class Tele_Bot(telebot.TeleBot):
         if state != self.__cam_sel_state:
             self.__switch_sel_cam_state(state)
             self.__model.camera_switch_state(self.__cam_sel_id, state)
+
+    @hm_protect
+    def __cam_switch_md_state(self, msg):
+        state = True if msg.text == C_MD_ON else False
+
+        if state != self.__model.get_camera_by_i(self.__cam_sel_id).motion_detect:
+            self.__model.camera_switch_md_state(self.__cam_sel_id, state)
 
     @hm_protect
     def __get_last_frame(self, msg):
@@ -427,20 +446,20 @@ class Tele_Bot(telebot.TeleBot):
 
     def __main_loop(self):
         out_log("skipped: {:s}".format(str(self.__skip_updates_m())))
-        # self.__show_bot_started()
+        self.__show_bot_started()
 
         self.__model.check_cameras()
 
-        # while not self.__stop_f:
-        #     # self.__get_updates_ex()
-        #     upds_num = self.__get_updates()
-        #     if upds_num:
-        #         out_log("rx updates: {:s}".format(str(upds_num)))
-        #     self.__show_alert()
+        while not self.__stop_f:
+            # self.__get_updates_ex()
+            upds_num = self.__get_updates()
+            if upds_num:
+                out_log("rx updates: {:s}".format(str(upds_num)))
+            self.__show_alert()
 
         self.__model.switch_off_cameras()
 
-        # self.__show_bot_stopped()
+        self.__show_bot_stopped()
 
     def do_work(self):
         self.__main_loop()
