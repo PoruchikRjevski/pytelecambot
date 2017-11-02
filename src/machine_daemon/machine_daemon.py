@@ -17,6 +17,10 @@ CRIT_CPU_LOAD = 15
 CRIT_CPU_TEMP = 50
 CRIT_MEM_LOAD = 50
 
+CPU_TEMP_CUR_ID = 1
+CPU_TEMP_HIGH_ID = 2
+CPU_TEMP_CRIT_ID = 3
+
 
 class MachineDaemon:
     def __init__(self):
@@ -69,17 +73,17 @@ class MachineDaemon:
     def __check_cpu_load(self):
         cur_cpu_load = self.__get_cpu_load()
         return "CPU load {:s} {:d}".format(str(cur_cpu_load),
-                                                  CRIT_CPU_LOAD) if cur_cpu_load > CRIT_CPU_LOAD else ""
+                                           CRIT_CPU_LOAD) if cur_cpu_load > CRIT_CPU_LOAD else ""
 
     def __check_cpu_temp(self):
         cur_cpu_temp = self.__get_cpu_mid_temp()
         return "CPU temp {:s} {:d}".format(str(cur_cpu_temp),
-                                                  CRIT_CPU_TEMP) if cur_cpu_temp > CRIT_CPU_TEMP else ""
+                                           CRIT_CPU_TEMP) if cur_cpu_temp > CRIT_CPU_TEMP else ""
 
     def __check_mem_load(self):
         cur_mem_load = self.__get_mem_load()
         return "MEM load {:s} {:d}".format(str(cur_mem_load),
-                                                  CRIT_MEM_LOAD) if cur_mem_load > CRIT_MEM_LOAD else ""
+                                           CRIT_MEM_LOAD) if cur_mem_load > CRIT_MEM_LOAD else ""
 
     def __do_check_system_status(self, alerts_q):
         msg = ""
