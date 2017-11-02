@@ -283,7 +283,7 @@ class Tele_Bot(telebot.TeleBot):
 
             if alert.type == cmn.T_CAM_NOW_PHOTO:
                 self.send_photo(int(alert.who), photo=open(alert.img, 'rb'))
-            elif alert.type == cmn.T_SYS_NOW_INFO:
+            elif alert.type in (cmn.T_SYS_NOW_INFO, cmn.T_SYS_ALERT):
                 self.send_message(ADMIN_ID, alert.msg)
             elif alert.type == cmn.T_CAM_SW:
                 chat = telebot.types.Chat(ADMIN_ID, 'private')

@@ -328,8 +328,8 @@ class Camera:
                 frame_rs = self.__resize_frame(frame, LO_W, LO_H)
 
                 timestamp = datetime.datetime.now()
-                ts_fr = timestamp.strftime(TIMESTAMP_FRAME_STR)
-                ts_p = timestamp.strftime(TIMESTAMP_PATH_STR)
+                ts_fr = timestamp.strftime(cmn.TIMESTAMP_FRAME_STR)
+                ts_p = timestamp.strftime(cmn.TIMESTAMP_PATH_STR)
 
                 frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
 
@@ -591,5 +591,3 @@ class Camera:
 
     def now_frame(self, who):
         self.__now_frame_q.put_nowait(who)
-        # if not self.__now_frame_f.value:
-            # self.__now_frame_f.value = True

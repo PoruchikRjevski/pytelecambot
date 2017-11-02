@@ -21,12 +21,16 @@ INI_PATH        = "../misc/main.ini"
 # cameras config path
 CAMS_F_PATH        = "../misc/cameras.ini"
 
+TIMESTAMP_FRAME_STR         = '%d %B %y %H:%M:%S'
+TIMESTAMP_PATH_STR          = '%d%m%y_%H%M%S'
+
 # alert types
 T_CAM_MOVE_MP4           = 0
 T_CAM_MOVE_PHOTO         = 1
 T_CAM_SW                 = 2
 T_CAM_NOW_PHOTO          = 3
 T_SYS_NOW_INFO           = 4
+T_SYS_ALERT              = 5
 
 
 TO_ALL                   = -1
