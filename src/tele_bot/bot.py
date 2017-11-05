@@ -55,17 +55,18 @@ class Tele_Bot(telebot.TeleBot):
             if t_comm == C_A_RES: self.__restart_bot(msg)
             elif t_comm == C_A_STOP: self.__stop_bot(msg)
             elif t_comm == C_CAMS: self.__show_cams_m(msg)
-            elif t_comm == C_A_WHO_ARE or t_comm == C_A_WHO_R or t_comm == C_A_WHO_UR: self.__show_who_are(msg)
+            elif t_comm in [C_A_WHO_ARE, C_A_WHO_R, C_A_WHO_UR]: self.__show_who_are(msg)
             elif t_comm == C_A_SYS_INFO: self.__get_system_info(msg)
-            elif t_comm == C_R_ACC or t_comm == C_R_KICK: self.__do_reg(msg)
+            elif t_comm in [C_R_ACC, C_R_KICK]: self.__do_reg(msg)
             elif t_comm == C_R_NEXT: self.__show_next_reg(msg)
             elif t_comm == C_U_REG: self.__add_req_reg(msg)
             elif t_comm == C_V_UREG: self.__add_req_ureg(msg)
-            elif t_comm == C_MENU or t_comm == C_BACK or t_comm == C_UPD: self.__show_m(msg)
-            elif t_comm == C_C_ON or t_comm == C_C_OFF: self.__cam_switch_state(msg)
-            elif t_comm == C_MD_ON or t_comm == C_MD_OFF: self.__cam_switch_md_state(msg)
+            elif t_comm in [C_MENU, C_BACK, C_UPD]: self.__show_m(msg)
+            elif t_comm in [C_C_ON, C_C_OFF]: self.__cam_switch_state(msg)
+            elif t_comm in [C_MD_ON, C_MD_OFF]: self.__cam_switch_md_state(msg)
             elif t_comm == C_C_LAST: self.__get_last_frame(msg)
             elif t_comm == C_C_NOW: self.__get_now_frame(msg)
+            elif t_comm == C_C_NOW_ALL: self.__get_now_frame_all(msg)
             elif t_comm in CAM_M_L: self.__show_cam_m(msg)
 
     def __create_cam_menu(self):
@@ -377,6 +378,13 @@ class Tele_Bot(telebot.TeleBot):
     @hm_protect
     def __get_now_frame(self, msg):
         self.__model.get_now_photo(self.__cam_sel_id, msg.chat.id)
+
+    @hm_protect
+    def __get_now_frame_all(self, msg):
+        cams_n = self.__model.get_cameras_len()
+
+        for n in range(cams_n):
+            self.__model.get_now_photo(n, msg.chat.id)
 
     @hi_protect
     def __get_system_info(self, _):
