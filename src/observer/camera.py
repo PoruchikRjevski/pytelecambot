@@ -240,7 +240,7 @@ class Camera:
         pass
 
     def __do_work_proc(self, working_f, md_f, now_frame_q, out, rec_f, rec_buf):
-        cam_h = cv2.VideoCapture(int(self.cam_id))
+        cam_h = cv2.VideoCapture(int(self.__c_id))
         # cam_work = True
 
         rec_fr_cntr = 0
@@ -249,7 +249,7 @@ class Camera:
 
         rec_t = time.time()
         obs_t = rec_t
-        wrt_t = rec_f
+        wrt_t = rec_t
         file_p = ""
 
         check_t = 0
@@ -265,7 +265,6 @@ class Camera:
 
             if rec_t_c >= REC_TMT:
                 rec_t = rec_t_c
-                # ret, frame = True, cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_{:s}.jpg".format(str(self.__c_id))))
                 ret, frame = cam_h.read()
 
                 if not ret:
@@ -273,7 +272,6 @@ class Camera:
                     continue
 
                 # process frame
-                # frame_rs = self.__resize_frame(frame, LO_W, LO_H)
                 frame_rs = self.__resize_frame(frame, HI_W, HI_H)
 
                 timestamp = datetime.datetime.now()
@@ -326,8 +324,8 @@ class Camera:
                 if now_frame_q.qsize() > 0:
                     while now_frame_q.qsize() > 0:
                         out.put_nowait(cmn.Alert(cmn.T_CAM_NOW_PHOTO,
-                                                 cmn.NOW_ALERT.format(str(self.cam_id),
-                                                                      self.cam_name,
+                                                 cmn.NOW_ALERT.format(str(self.__c_id),
+                                                                      self.__c_name,
                                                                       ts_fr),
                                                  file_p,
                                                  self.__c_name,

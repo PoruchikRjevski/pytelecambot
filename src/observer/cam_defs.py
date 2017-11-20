@@ -11,7 +11,7 @@ REC_TMT                     = 1 / VIDEO_REC_FPS
 REC_TMT_SHIFT               = REC_TMT / 2
 OBSERVING_TMT               = 1 / OBSERVE_FPS
 
-TIMELAPSE_TMT               = 5
+TIMELAPSE_TMT               = 10
 
 HI_W                        = 1280
 HI_H                        = 720
