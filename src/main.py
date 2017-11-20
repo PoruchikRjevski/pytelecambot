@@ -128,7 +128,7 @@ def main():
 
     g_v.PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
 
-    init_logging()
+    init_logging(common.SOLUTION, g_v.VERBOSE, g_v.LOGGING)
 
     config_path = os.path.join(g_v.PROJECT_PATH, common.CONFIG_DIR_PATH)
     if not os.path.exists(config_path):

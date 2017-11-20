@@ -292,7 +292,7 @@ class TelegramBot(telebot.TeleBot):
             if alert.type == common.T_CAM_NOW_PHOTO:
                 self.send_photo(int(alert.who), photo=open(alert.img, 'rb'))
             elif alert.type in (common.T_SYS_NOW_INFO, common.T_SYS_ALERT):
-                self.send_message(ADMIN_ID, alert.msg)
+                self.send_message(chat_id=ADMIN_ID, text=alert.msg, parse_mode="markdown")
             elif alert.type == common.T_CAM_SW:
                 chat = telebot.types.Chat(ADMIN_ID, 'private')
                 msg = telebot.types.Message(0, 0, 0, chat, 0, [])
@@ -300,7 +300,7 @@ class TelegramBot(telebot.TeleBot):
 
                 if alert.cam is not None:
                     self.__show_cam_m(msg)
-                self.send_message(ADMIN_ID, alert.msg)
+                self.send_message(chat_id=ADMIN_ID, text=alert.msg, parse_mode="markdown")
 
                 for i in range(0, self.__model.get_viewers_len()):
                     (s_id, s_name) = self.__model.get_viewer_by_i(i)

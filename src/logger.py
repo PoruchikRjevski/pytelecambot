@@ -9,7 +9,6 @@ import global_vars as g_v
 __all__ = ['init_logging', 'log_func_name']
 
 
-logger = None
 formatter = None
 file_handler = None
 stream_handler = None
@@ -43,11 +42,7 @@ def gen_path(name):
     return os.path.join(path, name)
 
 
-def init_logging():
-    global logger
-
-    name = common.SOLUTION
-
+def init_logging(name, verbose=False, to_file=False):
     file_handler = None
     stream_handler = None
     formatter = logging.Formatter("[{:s}] : [{:s}] : [{:s}] : [{:s}] : [{:s}] : [{:s}] : [{:s}]".format(common.LOG_TIME,
@@ -63,7 +58,7 @@ def init_logging():
     logger.propagate = False
     logger.setLevel(log_level)
 
-    if g_v.VERBOSE:
+    if verbose:
         logger.propagate = True
 
         stream_handler = logging.StreamHandler()
@@ -71,9 +66,11 @@ def init_logging():
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
 
-    if g_v.LOGGING:
+    if to_file:
         path = gen_path(name)
         file_handler = logging.FileHandler(path)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(log_level)
         logger.addHandler(file_handler)
+
+    return logger

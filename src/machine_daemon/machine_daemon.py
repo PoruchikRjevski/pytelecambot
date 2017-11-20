@@ -2,20 +2,28 @@ import psutil
 import time
 import datetime
 from multiprocessing import Value, Queue, Process
+import logging
 
 import common
+from logger import init_logging, log_func_name
 
 __all__ = ['MachineDaemon']
 
 
-UPDATE_TMT = 2
+UPDATE_TMT              = 2
+LOG_TMT                 = 3
 UPDATE_TMT_HALF = UPDATE_TMT/2
 
-CPU_INTERVAL = 0
+CPU_INTERVAL            = 0
 
-CRIT_CPU_LOAD = 50 # in %
+CRIT_CPU_LOAD           = 80 # in %
+CRIT_RAM_LOAD           = 90
+CRIT_DISK_LOAD          = 30
+CRIT_BAT_VOL            = 15
+
+
 CRIT_CPU_TEMP = 50
-CRIT_MEM_LOAD = 50
+
 
 CPU_TEMP_CUR_ID = 1
 CPU_TEMP_HIGH_ID = 2
@@ -32,15 +40,12 @@ class MachineDaemon:
         self.__now_status_f = Value("i", 1)
         self.__now_status_f.value = False
 
-    def __get_battery_info(self):
-        m_bat = psutil.sensors_battery()
-        if not m_bat is None:
-            return m_bat[0], m_bat[2]
-
-        return None, None
-
     @staticmethod
     def __get_cpu_load():
+        return psutil.cpu_percent(CPU_INTERVAL)
+
+    @staticmethod
+    def __get_all_cpus_load():
         return psutil.cpu_percent(CPU_INTERVAL, percpu=True)
 
     def __get_cpu_mid_temp(self):
@@ -52,25 +57,41 @@ class MachineDaemon:
 
     @staticmethod
     def __get_loads():
-        m_load_cpu = str(MachineDaemon.__get_cpu_load())
-        m_load_mem = str(MachineDaemon.__get_mem_load())
+        do_alert = False
 
-        msg = "{:s}\nLOAD:\n{:s}\n CPU: {:s}% \n RAM: {:s}%".format(common.MID_EDGE,
-                                                                    common.MID_EDGE,
-                                                                    m_load_cpu,
-                                                                    m_load_mem)
+        # cpu load
+        cpu_load = MachineDaemon.__get_cpu_load()
+        cpu_load_txt = "CPU: {:s}%".format(str(cpu_load))
+        if cpu_load >= CRIT_CPU_LOAD:
+            do_alert = True
+            cpu_load_txt = "*{:s}*".format(cpu_load_txt)
 
-        return msg
+        # ram load
+        ram_load = MachineDaemon.__get_mem_load()
+        ram_load_txt = "RAM: {:s}%".format(str(ram_load))
+        if ram_load >= CRIT_RAM_LOAD:
+            do_alert = True
+            ram_load_txt = "*{:s}*".format(ram_load_txt)
+
+        # compile
+        msg = "{:s}\nLOAD:\n{:s}\n{:s}\n{:s}".format(common.MID_EDGE,
+                                                     common.MID_EDGE,
+                                                     cpu_load_txt,
+                                                     ram_load_txt)
+
+        return do_alert, msg
 
     @staticmethod
     def __get_temperatures():
+        do_alert = False
+
         msg = "{:s}\nTEMP:\n{:s}".format(common.MID_EDGE,
-                                        common.MID_EDGE)
+                                         common.MID_EDGE)
 
         temps = psutil.sensors_temperatures()
 
         if temps is None:
-            return ""
+            return do_alert, ""
 
         first = True
 
@@ -87,72 +108,92 @@ class MachineDaemon:
                                                         str(cur),
                                                         str(hight))
 
+                if cur >= hight:
+                    msg = "*{:s}*".format(msg)
+                    do_alert = True
 
-        return msg
+        return do_alert, msg
 
     @staticmethod
     def __get_disk_usage():
+        do_alert = False
+
         msg = "{:s}\nHDD:\n{:s}".format(common.MID_EDGE,
                                         common.MID_EDGE)
 
         disk_usage = psutil.disk_usage('/')
 
         if disk_usage is None:
-            return ""
+            return do_alert, ""
 
-        msg = "{:s}\nMain disk: {:s}%".format(msg,
-                                              str(disk_usage[3]))
+        disk_usage_txt = "Main disk: {:s}%".format(str(disk_usage[3]))
+        if disk_usage[3] >= CRIT_DISK_LOAD:
+            disk_usage_txt = "*{:s}*".format(disk_usage_txt)
+            do_alert = True
 
-        return msg
+        msg = "{:s}\n{:s}".format(msg,
+                                  disk_usage_txt)
+
+        return do_alert, msg
 
     @staticmethod
     def __get_battery_info():
-        msg = "{:s}\nHDD:\n{:s}".format(common.MID_EDGE,
+        do_alert = False
+
+        msg = "{:s}\nBATTERY:\n{:s}".format(common.MID_EDGE,
                                         common.MID_EDGE)
 
+        bat_info = psutil.sensors_battery()
 
-    def __get_system_status_info(self):
+        if bat_info is None:
+            return do_alert, ""
+
+        perc, t_left, plugg = bat_info
+
+        if perc <= CRIT_BAT_VOL and not plugg:
+            do_alert = True
+
+        msg = "{:s}\nVolume: {:s}%".format(msg,
+                                           str(perc))
+        msg = "{:s}\nTime left: {:s}%".format(msg,
+                                              str(t_left/3600))
+        msg = "{:s}\nAC plugged: {:s}%".format(msg,
+                                               str(plugg))
+
+        if do_alert:
+            msg = "*{:s}*".format(msg)
+
+        return do_alert, msg
+
+    def __update_system_status_info(self, do_alert):
         time_stamp = datetime.datetime.now().strftime(common.TIMESTAMP_FRAME_STR)
 
+        load_alert, load_msg = MachineDaemon.__get_loads()
         msg = "{:s}\nSystem status:\n{:s}\n{:s}\n{:s}".format(common.BIG_EDGE,
                                                               time_stamp,
                                                               common.BIG_EDGE,
-                                                              MachineDaemon.__get_loads())
+                                                              load_msg)
 
-        msg = "{:s}\n{:s}\n {:s}".format(msg,
-                                         common.MID_EDGE,
-                                         MachineDaemon.__get_temperatures())
+        temp_alert, temp_msg = MachineDaemon.__get_temperatures()
+        msg = "{:s}\n{:s}\n{:s}".format(msg,
+                                        common.MID_EDGE,
+                                        temp_msg)
 
+        disk_alert, disk_msg = MachineDaemon.__get_disk_usage()
         msg = "{:s}\n{:s}".format(msg,
-                                  MachineDaemon.__get_disk_usage())
+                                  disk_msg)
+
+        bat_alert, bat_msg = MachineDaemon.__get_battery_info()
+        msg = "{:s}\n{:s}".format(msg,
+                                  bat_msg)
 
         msg = "{:s}\n{:s}".format(msg,
                                   common.BIG_EDGE)
 
-
-        # msg = "System status"
-        # m_load_cpu = str(self.__get_cpu_load())
-        # m_load_mem = str(self.__get_mem_load())
-        #
-        # # get common cpu temp
-        # m_cpu_temp = str(self.__get_cpu_mid_temp())
-        #
-        # # get battery info
-        # m_bat_str = ""
-        # b_perc, b_plug = self.__get_battery_info()
-        # if not b_perc is None or not b_plug is None:
-        #     m_bat_str = "{:s}%, {:s}".format(str(b_perc),
-        #                                           "Plugged" if b_plug else "Unplugged")
-        #
-        # msg = "CPU load: {:s} \nCPU temp: {:s} \nMEM load: {:s} \nBat: {:s}".format(m_load_cpu,
-        #                                                                             m_cpu_temp,
-        #                                                                             m_load_mem,
-        #                                                                             m_bat_str)
-
-        return msg
+        return (load_alert or temp_alert or disk_alert or bat_alert), msg
 
     def __check_cpu_load(self):
-        cur_cpu_load = self.__get_cpu_load()
+        cur_cpu_load = self.__get_all_cpus_load()
         return "CPU load {:s} {:d}".format(str(cur_cpu_load),
                                            CRIT_CPU_LOAD) if cur_cpu_load > CRIT_CPU_LOAD else ""
 
@@ -164,7 +205,7 @@ class MachineDaemon:
     def __check_mem_load(self):
         cur_mem_load = self.__get_mem_load()
         return "MEM load {:s} {:d}".format(str(cur_mem_load),
-                                           CRIT_MEM_LOAD) if cur_mem_load > CRIT_MEM_LOAD else ""
+                                           CRIT_RAM_LOAD) if cur_mem_load > CRIT_RAM_LOAD else ""
 
     def __do_check_system_status(self, alerts_q):
         msg = ""
@@ -188,22 +229,36 @@ class MachineDaemon:
             alerts_q.put_nowait(common.Alert(common.T_SYS_ALERT,
                                           msg))
 
-
     def __main_loop(self, work_f, now_stat_f, alerts_q):
         cur_t = time.time()
         cur_t_tmp = 0
+        log_t = time.time()
+        log_t_tmp = 0
+
+        cur_status = ""
+        do_alert = False
+
+        logger = init_logging("MachineDaemon", True, True)
 
         while work_f.value:
-            if now_stat_f.value:
+            if (now_stat_f.value or do_alert) and cur_status is not "":
                 alerts_q.put_nowait(common.Alert(common.T_SYS_NOW_INFO,
-                                              self.__get_system_status_info()))
+                                                 cur_status))
 
                 now_stat_f.value = False
+                do_alert = False
 
+            # log system status
+            log_t_tmp = time.time() - log_t
+            if log_t_tmp >= LOG_TMT:
+                if cur_status is not "":
+                    logger.info("\n{:s}".format(cur_status))
+                log_t = time.time()
+
+            # update system status
             cur_t_tmp = time.time() - cur_t
-
             if cur_t_tmp >= UPDATE_TMT:
-                # self.__do_check_system_status(alerts_q)
+                do_alert, cur_status = self.__update_system_status_info(do_alert)
 
                 cur_t = time.time()
             else:
