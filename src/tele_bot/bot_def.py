@@ -8,41 +8,41 @@ UPD_TMT                 = 1
 # messages
 BOT_START               = "Бусинко-наблюдатель({:s}) запущен"
 BOT_STOP                = "Бусинко-наблюдатель остановлен"
-TO_RULE                 = "Командуй"
+TO_RULE                 = "Select"
 NOBODY                  = "Empty"
 
 # commands
 C_START                 = 'start'
 C_HELP                  = 'help'
 
-C_V_UREG                = 'Отключиться'
+C_V_UREG                = 'DISCONNECT'
 
-C_U_REG                 = 'Подключиться'
+C_U_REG                 = 'CONNECT'
 
-C_CAMS                  = 'Камеры'
-C_BACK                  = 'Назад'
-C_UPD                   = 'Обновить меню'
-C_MENU                   = 'Меню'
+C_CAMS                  = 'CAMS'
+C_BACK                  = 'BACK'
+C_UPD                   = 'REFRESH'
+C_MENU                  = 'MENU'
 
-C_A_RES                 = 'RESTART'
-C_A_STOP                = 'STOP'
-C_A_WHO_R               = 'reg l'
-C_A_WHO_UR              = 'unreg l'
-C_A_WHO_ARE             = 'viewers l'
-C_A_SYS_INFO            = "sys info"
+C_A_RES                 = 'restart'
+C_A_STOP                = 'stop'
+C_A_WHO_R               = 'reg l.'
+C_A_WHO_UR              = 'unreg l.'
+C_A_WHO_ARE             = 'viewers l.'
+C_A_SYS_INFO            = "sys. info"
 
-C_R_ACC                 = 'accept'
-C_R_DECL                = 'decl'
+C_R_ACC                 = 'accept.'
+C_R_DECL                = 'decl.'
 C_R_NEXT                = 'next'
 C_R_KICK                = 'kick'
 
-C_C_ON                  = 'Включить камеру'
-C_C_OFF                 = 'Выключить камеру'
-C_MD_ON                 = 'Включить детектирование'
-C_MD_OFF                = 'Выключить детектирование'
-C_C_LAST                = 'Последнее'
-C_C_NOW_ALL            = 'Last all'
-C_C_NOW                 = 'Сфотографировать'
+C_C_ON                  = 'ON cam'
+C_C_OFF                 = 'OFF cam'
+C_MD_ON                 = 'ON detect'
+C_MD_OFF                = 'OFF detect'
+C_C_LAST                = 'LAST'
+C_C_NOW_ALL             = 'PHOTOS'
+C_C_NOW                 = 'PHOTO'
 
 NO_DEL_L                = [C_C_NOW, C_R_ACC, C_R_KICK, C_R_NEXT, C_U_REG, C_V_UREG, C_A_WHO_ARE, C_A_WHO_R, C_A_WHO_UR]
 
@@ -55,9 +55,7 @@ for row in GET_M_L:
 
 ADMIN_M_L                 = [[C_A_STOP, C_A_RES],
                              [C_A_WHO_R, C_A_WHO_UR, C_A_WHO_ARE],
-                             [C_CAMS],
-                             [C_C_NOW_ALL],
-                             [C_A_SYS_INFO],
+                             [C_CAMS, C_C_NOW_ALL, C_A_SYS_INFO],
                              [C_UPD]]
 ADMIN_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
 for row in ADMIN_M_L:
@@ -79,8 +77,7 @@ for row in KICK_M_L:
 
 
 VIEWERS_M_L               = [[C_V_UREG],
-                             [C_CAMS],
-                             [C_C_NOW_ALL],
+                             [C_CAMS, C_C_NOW_ALL],
                              [C_UPD]]
 VIEWERS_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
 for row in VIEWERS_M_L:

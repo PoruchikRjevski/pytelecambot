@@ -9,6 +9,10 @@ BOT_SECTION                 = "BOT"
 TEST_TOKEN_OPTION           = "test_token"
 REAL_TOKEN_OPTION           = "real_token"
 
+BIG_EDGE                    = "-" * 30
+MID_EDGE                    = "-" * 20
+SMALL_EDGE                  = "-" * 5
+
 # BOT
 WAIT_TIMEOUT                = 0.1
 

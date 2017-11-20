@@ -3,7 +3,7 @@ import time
 import datetime
 from multiprocessing import Value, Queue, Process
 
-import common as cmn
+import common
 
 __all__ = ['MachineDaemon']
 
@@ -13,7 +13,7 @@ UPDATE_TMT_HALF = UPDATE_TMT/2
 
 CPU_INTERVAL = 0
 
-CRIT_CPU_LOAD = 15
+CRIT_CPU_LOAD = 50 # in %
 CRIT_CPU_TEMP = 50
 CRIT_MEM_LOAD = 50
 
@@ -39,34 +39,115 @@ class MachineDaemon:
 
         return None, None
 
-    def __get_cpu_load(self):
-        return psutil.cpu_percent(CPU_INTERVAL)
+    @staticmethod
+    def __get_cpu_load():
+        return psutil.cpu_percent(CPU_INTERVAL, percpu=True)
 
     def __get_cpu_mid_temp(self):
         return psutil.sensors_temperatures()['coretemp'][0][1]
 
-    def __get_mem_load(self):
+    @staticmethod
+    def __get_mem_load():
         return psutil.virtual_memory()[2]
 
+    @staticmethod
+    def __get_loads():
+        m_load_cpu = str(MachineDaemon.__get_cpu_load())
+        m_load_mem = str(MachineDaemon.__get_mem_load())
+
+        msg = "{:s}\nLOAD:\n{:s}\n CPU: {:s}% \n RAM: {:s}%".format(common.MID_EDGE,
+                                                                    common.MID_EDGE,
+                                                                    m_load_cpu,
+                                                                    m_load_mem)
+
+        return msg
+
+    @staticmethod
+    def __get_temperatures():
+        msg = "{:s}\nTEMP:\n{:s}".format(common.MID_EDGE,
+                                        common.MID_EDGE)
+
+        temps = psutil.sensors_temperatures()
+
+        if temps is None:
+            return ""
+
+        first = True
+
+        for key, val_l in temps.items():
+            if first:
+                first = False
+            else:
+                msg = "{:s}\n{:s}".format(msg,
+                                          common.SMALL_EDGE)
+
+            for label, cur, hight, crit in val_l:
+                msg = "{:s}\n{:s}: {:s}({:s})°C".format(msg,
+                                                        str(label),
+                                                        str(cur),
+                                                        str(hight))
+
+
+        return msg
+
+    @staticmethod
+    def __get_disk_usage():
+        msg = "{:s}\nHDD:\n{:s}".format(common.MID_EDGE,
+                                        common.MID_EDGE)
+
+        disk_usage = psutil.disk_usage('/')
+
+        if disk_usage is None:
+            return ""
+
+        msg = "{:s}\nMain disk: {:s}%".format(msg,
+                                              str(disk_usage[3]))
+
+        return msg
+
+    @staticmethod
+    def __get_battery_info():
+        msg = "{:s}\nHDD:\n{:s}".format(common.MID_EDGE,
+                                        common.MID_EDGE)
+
+
     def __get_system_status_info(self):
-        msg = "System status"
-        m_load_cpu = str(self.__get_cpu_load())
-        m_load_mem = str(self.__get_mem_load())
+        time_stamp = datetime.datetime.now().strftime(common.TIMESTAMP_FRAME_STR)
 
-        # get common cpu temp
-        m_cpu_temp = str(self.__get_cpu_mid_temp())
+        msg = "{:s}\nSystem status:\n{:s}\n{:s}\n{:s}".format(common.BIG_EDGE,
+                                                              time_stamp,
+                                                              common.BIG_EDGE,
+                                                              MachineDaemon.__get_loads())
 
-        # get battery info
-        m_bat_str = ""
-        b_perc, b_plug = self.__get_battery_info()
-        if not b_perc is None or not b_plug is None:
-            m_bat_str = "{:s}%, {:s}".format(str(b_perc),
-                                                  "Plugged" if b_plug else "Unplugged")
+        msg = "{:s}\n{:s}\n {:s}".format(msg,
+                                         common.MID_EDGE,
+                                         MachineDaemon.__get_temperatures())
 
-        msg = "CPU load: {:s} \nCPU temp: {:s} \nMEM load: {:s} \nBat: {:s}".format(m_load_cpu,
-                                                                                    m_cpu_temp,
-                                                                                    m_load_mem,
-                                                                                    m_bat_str)
+        msg = "{:s}\n{:s}".format(msg,
+                                  MachineDaemon.__get_disk_usage())
+
+        msg = "{:s}\n{:s}".format(msg,
+                                  common.BIG_EDGE)
+
+
+        # msg = "System status"
+        # m_load_cpu = str(self.__get_cpu_load())
+        # m_load_mem = str(self.__get_mem_load())
+        #
+        # # get common cpu temp
+        # m_cpu_temp = str(self.__get_cpu_mid_temp())
+        #
+        # # get battery info
+        # m_bat_str = ""
+        # b_perc, b_plug = self.__get_battery_info()
+        # if not b_perc is None or not b_plug is None:
+        #     m_bat_str = "{:s}%, {:s}".format(str(b_perc),
+        #                                           "Plugged" if b_plug else "Unplugged")
+        #
+        # msg = "CPU load: {:s} \nCPU temp: {:s} \nMEM load: {:s} \nBat: {:s}".format(m_load_cpu,
+        #                                                                             m_cpu_temp,
+        #                                                                             m_load_mem,
+        #                                                                             m_bat_str)
 
         return msg
 
@@ -98,13 +179,13 @@ class MachineDaemon:
 
         if msgs_list:
             timestamp = datetime.datetime.now()
-            ts_fr = timestamp.strftime(cmn.TIMESTAMP_FRAME_STR)
+            ts_fr = timestamp.strftime(common.TIMESTAMP_FRAME_STR)
 
             msg = "\n".join(msgs_list)
             msg = "EXCEED at {:s}\n{:s}".format(ts_fr,
                                                 msg)
 
-            alerts_q.put_nowait(cmn.Alert(cmn.T_SYS_ALERT,
+            alerts_q.put_nowait(common.Alert(common.T_SYS_ALERT,
                                           msg))
 
 
@@ -114,15 +195,15 @@ class MachineDaemon:
 
         while work_f.value:
             if now_stat_f.value:
-                alerts_q.put_nowait(cmn.Alert(cmn.T_SYS_NOW_INFO,
+                alerts_q.put_nowait(common.Alert(common.T_SYS_NOW_INFO,
                                               self.__get_system_status_info()))
-                # todo do get system info
+
                 now_stat_f.value = False
 
             cur_t_tmp = time.time() - cur_t
 
             if cur_t_tmp >= UPDATE_TMT:
-                self.__do_check_system_status(alerts_q)
+                # self.__do_check_system_status(alerts_q)
 
                 cur_t = time.time()
             else:

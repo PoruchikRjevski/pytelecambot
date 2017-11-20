@@ -98,17 +98,17 @@ def start_work():
 
     system_info_dmn = MachineDaemon()
 
-    if g_v.BOT_ENABLED:
-        work_token = g_v.TEST_TOKEN if g_v.TEST_ENABLED else g_v.REAL_TOKEN
-        telegram_bot = TelegramBot(work_token, model, system_info_dmn)
-        telegram_bot.do_work()
-    else:
-        try:
+    try:
+        if g_v.BOT_ENABLED:
+            work_token = g_v.TEST_TOKEN if g_v.TEST_ENABLED else g_v.REAL_TOKEN
+            telegram_bot = TelegramBot(work_token, model, system_info_dmn)
+            telegram_bot.do_work()
+        else:
             model.check_cameras()
             system_info_dmn.start_work()
-        except KeyboardInterrupt:
-            model.switch_off_cameras()
-            system_info_dmn.stop_work()
+    except KeyboardInterrupt:
+        model.switch_off_cameras()
+        system_info_dmn.stop_work()
 
 
 def true_exit():
