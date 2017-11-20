@@ -140,6 +140,8 @@ def main():
 
     start_work()
 
+    true_exit()
+
 
 if __name__ == '__main__':
     main()
