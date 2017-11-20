@@ -15,8 +15,8 @@ __all__ = ['Tele_Bot']
 
 
 class Tele_Bot(telebot.TeleBot):
-    def __init__(self, u_model, m_daemon):
-        super().__init__(TOKEN)
+    def __init__(self, token, u_model, m_daemon):
+        super().__init__(token)
         bot = self
 
         self.__stop_f = False

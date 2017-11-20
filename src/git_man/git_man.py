@@ -1,10 +1,14 @@
+import logging
+
+import common
 import git_man.cmd_executor as c_e
 import git_man.git_defs as g_d
 
-from logger import *
-
 
 __all__ = ['get_commits_num']
+
+
+logger = logging.getLogger("{:s}.GitMan".format(common.SOLUTION))
 
 
 def get_commits_num():
@@ -17,9 +21,9 @@ def get_commits_num():
         try:
             out_int = int(out)
         except ValueError:
-            out_err("bad repo")
+            logger.error("bad repo")
             return ""
         else:
-            out_log("change build version: {:s}".format(out))
+            logger.info("change build version: {:s}".format(out))
 
         return out

@@ -7,6 +7,7 @@ from observer.camera import *
 
 __all__ = ['UserModel']
 
+
 class UserModel:
     def __init__(self, path):
         self.__admins = []
