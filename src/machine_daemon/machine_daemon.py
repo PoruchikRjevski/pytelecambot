@@ -10,24 +10,16 @@ from logger import init_logging, log_func_name
 __all__ = ['MachineDaemon']
 
 
-UPDATE_TMT              = 2
+UPDATE_TMT              = 5
 LOG_TMT                 = 3
-UPDATE_TMT_HALF = UPDATE_TMT/2
+UPDATE_TMT_HALF         = UPDATE_TMT/2
 
 CPU_INTERVAL            = 0
 
-CRIT_CPU_LOAD           = 80 # in %
+CRIT_CPU_LOAD           = 80
 CRIT_RAM_LOAD           = 90
-CRIT_DISK_LOAD          = 30
+CRIT_DISK_LOAD          = 99
 CRIT_BAT_VOL            = 15
-
-
-CRIT_CPU_TEMP = 50
-
-
-CPU_TEMP_CUR_ID = 1
-CPU_TEMP_HIGH_ID = 2
-CPU_TEMP_CRIT_ID = 3
 
 
 class MachineDaemon:
@@ -47,9 +39,6 @@ class MachineDaemon:
     @staticmethod
     def __get_all_cpus_load():
         return psutil.cpu_percent(CPU_INTERVAL, percpu=True)
-
-    def __get_cpu_mid_temp(self):
-        return psutil.sensors_temperatures()['coretemp'][0][1]
 
     @staticmethod
     def __get_mem_load():
@@ -165,7 +154,8 @@ class MachineDaemon:
 
         return do_alert, msg
 
-    def __update_system_status_info(self, do_alert):
+    @staticmethod
+    def __update_system_status_info(do_alert):
         time_stamp = datetime.datetime.now().strftime(common.TIMESTAMP_FRAME_STR)
 
         load_alert, load_msg = MachineDaemon.__get_loads()
@@ -192,43 +182,6 @@ class MachineDaemon:
 
         return (load_alert or temp_alert or disk_alert or bat_alert), msg
 
-    def __check_cpu_load(self):
-        cur_cpu_load = self.__get_all_cpus_load()
-        return "CPU load {:s} {:d}".format(str(cur_cpu_load),
-                                           CRIT_CPU_LOAD) if cur_cpu_load > CRIT_CPU_LOAD else ""
-
-    def __check_cpu_temp(self):
-        cur_cpu_temp = self.__get_cpu_mid_temp()
-        return "CPU temp {:s} {:d}".format(str(cur_cpu_temp),
-                                           CRIT_CPU_TEMP) if cur_cpu_temp > CRIT_CPU_TEMP else ""
-
-    def __check_mem_load(self):
-        cur_mem_load = self.__get_mem_load()
-        return "MEM load {:s} {:d}".format(str(cur_mem_load),
-                                           CRIT_RAM_LOAD) if cur_mem_load > CRIT_RAM_LOAD else ""
-
-    def __do_check_system_status(self, alerts_q):
-        msg = ""
-
-        cpu_load_str = self.__check_cpu_load()
-        cpu_temp_str = self.__check_cpu_temp()
-        mem_load_str = self.__check_mem_load()
-
-        msgs_list = [cpu_load_str, cpu_temp_str, mem_load_str]
-
-        msgs_list = [msg for msg in msgs_list if msg]
-
-        if msgs_list:
-            timestamp = datetime.datetime.now()
-            ts_fr = timestamp.strftime(common.TIMESTAMP_FRAME_STR)
-
-            msg = "\n".join(msgs_list)
-            msg = "EXCEED at {:s}\n{:s}".format(ts_fr,
-                                                msg)
-
-            alerts_q.put_nowait(common.Alert(common.T_SYS_ALERT,
-                                          msg))
-
     def __main_loop(self, work_f, now_stat_f, alerts_q):
         cur_t = time.time()
         cur_t_tmp = 0
@@ -238,7 +191,7 @@ class MachineDaemon:
         cur_status = ""
         do_alert = False
 
-        logger = init_logging("MachineDaemon", True, True)
+        logger = init_logging("MachineDaemon", False, True)
 
         while work_f.value:
             if (now_stat_f.value or do_alert) and cur_status is not "":
@@ -258,7 +211,7 @@ class MachineDaemon:
             # update system status
             cur_t_tmp = time.time() - cur_t
             if cur_t_tmp >= UPDATE_TMT:
-                do_alert, cur_status = self.__update_system_status_info(do_alert)
+                do_alert, cur_status = MachineDaemon.__update_system_status_info(do_alert)
 
                 cur_t = time.time()
             else:

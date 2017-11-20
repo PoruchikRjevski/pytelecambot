@@ -66,12 +66,6 @@ class Camera:
         # self.__now_frame_f = Value("i", 1)
         # self.__now_frame_f.value = False
 
-    def __init_camera(self):
-        self.__handle_cam = cv2.VideoCapture(int(self.__c_id))
-
-    def __get_frame(self):
-        return self.__handle_cam.read()
-
     def __get_test_frame(self):
         if self.__test:
             self.__test = False
@@ -211,55 +205,6 @@ class Camera:
         self.__f_rec = False
         self.__f_wr_mp4 = False
 
-    def __deinit_camera(self):
-        self.__handle_cam.release()
-
-    def __do_work(self):
-        self.__init_camera()
-        #
-        # if not self.__handle_cam.isOpened():
-        #     self.__do_work_test()
-        #
-        #     self.__deinit_camera()
-        #     self.state = False
-        #     return
-
-        obs_t = time.time()
-
-        while self.__work_f and self.__handle_cam.isOpened():
-            rec_t = time.time()
-            ret, frame = self.__handle_cam.read()
-            # ret, frame = self.__get_frame()
-
-            if ret:
-                cur_t = time.time()
-                self.__time_stamp = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
-
-                frame = self.__process_img(frame)
-
-                # self.__add_to_buf(frame)
-
-                if not self.__f_rec:
-                    if (cur_t - obs_t) >= OBSERVING_TMT:
-                        # if not self.__last_frame is None:
-                        #     if self.__compare_imgs(frame, self.__last_frame):
-                        #         self.__write_move_photo(frame)
-                        #         self.__f_rec = True
-                        #         self.__move_time_stamp = self.__time_stamp
-
-                        # todo detach to other process
-                        self.__write_frame(frame)
-                        self.__last_frame = frame
-                        obs_t = cur_t
-
-            rec_t = time.time() - rec_t
-            if rec_t < self.__frame_rec_half_tmt:
-                time.sleep(self.__frame_rec_half_tmt - rec_t)
-
-        self.__deinit_camera()
-
-        self.state = False
-
     def __add_frame_to_pre_buf(self, frame, buff):
         if buff.__len__() >= PRE_REC_BUF_SZ:
             buff.get_nowait()
@@ -303,7 +248,9 @@ class Camera:
         mv_detected_ts = None
 
         rec_t = time.time()
-        obs_t = time.time()
+        obs_t = rec_t
+        wrt_t = rec_f
+        file_p = ""
 
         check_t = 0
         timestamp = ''
@@ -322,10 +269,12 @@ class Camera:
                 ret, frame = cam_h.read()
 
                 if not ret:
+                    time.sleep(REC_TMT_SHIFT)
                     continue
 
                 # process frame
-                frame_rs = self.__resize_frame(frame, LO_W, LO_H)
+                # frame_rs = self.__resize_frame(frame, LO_W, LO_H)
+                frame_rs = self.__resize_frame(frame, HI_W, HI_H)
 
                 timestamp = datetime.datetime.now()
                 ts_fr = timestamp.strftime(cmn.TIMESTAMP_FRAME_STR)
@@ -369,9 +318,12 @@ class Camera:
 
                     last_frame = frame
 
-                if now_frame_q.qsize() > 0:
+                cur_wrt_t = time.time()
+                if (time.time() - wrt_t) >= TIMELAPSE_TMT:
+                    wrt_t = cur_wrt_t
                     file_p = self.__write_now_frame(frame_ts, ts_p)
 
+                if now_frame_q.qsize() > 0:
                     while now_frame_q.qsize() > 0:
                         out.put_nowait(cmn.Alert(cmn.T_CAM_NOW_PHOTO,
                                                  cmn.NOW_ALERT.format(str(self.cam_id),
