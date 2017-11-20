@@ -9,6 +9,9 @@ BOT_SECTION                 = "BOT"
 TEST_TOKEN_OPTION           = "test_token"
 REAL_TOKEN_OPTION           = "real_token"
 
+# BOT
+WAIT_TIMEOUT                = 0.1
+
 # LOGGER
 LOG_TIME                    = '%(asctime)s'
 LOG_LEVEL                   = '%(levelname)-8s'

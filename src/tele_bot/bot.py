@@ -2,19 +2,23 @@ import os
 import sys
 import threading
 import queue
+import logging
+import time
 
 import telebot
 import telebot.types
 
-import common as cmn
+import common
 from tele_bot.bot_def import *
 import version as ver
-from logger import *
 
-__all__ = ['Tele_Bot']
+__all__ = ['TelegramBot']
 
 
-class Tele_Bot(telebot.TeleBot):
+logger = logging.getLogger("{:s}.TelegramBot".format(common.SOLUTION))
+
+
+class TelegramBot(telebot.TeleBot):
     def __init__(self, token, u_model, m_daemon):
         super().__init__(token)
         bot = self
@@ -39,16 +43,16 @@ class Tele_Bot(telebot.TeleBot):
 
         @bot.message_handler(commands=[C_START, C_HELP])
         def handle_start(msg):
-            out_log("Rx \"{:s}\" by {:s} : {:s}".format(msg.text,
-                                                        str(msg.chat.id),
-                                                        msg.chat.first_name))
+            logger.info("Rx \"{:s}\" by {:s} : {:s}".format(msg.text,
+                                                            str(msg.chat.id),
+                                                            msg.chat.first_name))
             self.__show_m(msg)
 
         @bot.message_handler(content_types=["text"])
         def handle_text(msg):
             t_comm = msg.text
 
-            out_log("Rx \"{:s}\" by {:s} : {:s}".format(t_comm,
+            logger.info("Rx \"{:s}\" by {:s} : {:s}".format(t_comm,
                                                         str(msg.chat.id),
                                                         msg.chat.first_name))
 
@@ -107,7 +111,7 @@ class Tele_Bot(telebot.TeleBot):
     @hi_protect
     def __restart_bot(self, msg):
         self.send_message(ADMIN_ID, "Rebooting...")
-        cmn.reset_app()
+        common.reset_app()
 
     @hi_protect
     def __stop_bot(self, msg):
@@ -183,7 +187,7 @@ class Tele_Bot(telebot.TeleBot):
             self.send_message(s_id, msg)
             self.send_message(s_id, TO_RULE, reply_markup=GET_KB)
 
-        out_log(msg)
+            logger.info(msg)
 
     def __show_bot_stopped(self):
         self.send_message(ADMIN_ID, BOT_STOP)
@@ -192,7 +196,7 @@ class Tele_Bot(telebot.TeleBot):
         #     (s_id, s_name) = self.__model.get_viewer_by_i(i)
         #     self.send_message(s_id, BOT_STOP)
 
-        out_log(BOT_STOP)
+        logger.info(BOT_STOP)
 
     @hi_protect
     def __show_next_reg(self, _):
@@ -441,7 +445,6 @@ class Tele_Bot(telebot.TeleBot):
             updates = self.get_updates(offset=self.last_update_id + 1, timeout=UPD_TMT)
         return total
 
-
     def __skip_updates_m(self):
         total = 0
         updates = self.get_updates(offset=self.last_update_id, timeout=UPD_TMT)
@@ -453,27 +456,25 @@ class Tele_Bot(telebot.TeleBot):
             updates = self.get_updates(offset=self.last_update_id + 1, timeout=UPD_TMT)
         return total
 
-    def __main_loop(self):
-        out_log("skipped: {:s}".format(str(self.__skip_updates_m())))
+    def do_work(self):
+        logger.info("skipped: {:s}".format(str(self.__skip_updates_m())))
         self.__show_bot_started()
 
         self.__model.check_cameras()
         self.__machine_daemon.start_work()
 
         while not self.__stop_f:
-            # self.__get_updates_ex()
             upds_num = self.__get_updates()
             if upds_num:
-                out_log("rx updates: {:s}".format(str(upds_num)))
+                logger.info("rx updates: {:s}".format(str(upds_num)))
+            else:
+                time.sleep(common.WAIT_TIMEOUT)
             self.__show_alert()
 
         self.__model.switch_off_cameras()
         self.__machine_daemon.stop_work()
 
         self.__show_bot_stopped()
-
-    def do_work(self):
-        self.__main_loop()
 
     def stop_bot(self):
         self.__stop_f = True

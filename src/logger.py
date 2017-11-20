@@ -32,10 +32,13 @@ def log_func_name(t_logger):
 
 def gen_path(name):
     path = os.path.join(g_v.PROJECT_PATH, common.LOG_DIR_PATH)
+    if not os.path.exists(path):
+        os.mkdir(path)
+
     path = os.path.join(path, "{:s}_{:s}".format(name, datetime.datetime.now().strftime(common.LOG_TIMESTAMP)))
 
     if not os.path.exists(path):
-        os.makedirs(path, 0o777, True)
+        os.mkdir(path)
 
     return os.path.join(path, name)
 

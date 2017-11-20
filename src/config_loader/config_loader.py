@@ -32,10 +32,10 @@ class ConfigLoader:
 
         if cfg.has_section(common.BOT_SECTION):
             if cfg.has_option(common.BOT_SECTION, common.REAL_TOKEN_OPTION):
-                g_v.REAL_TOKEN = cfg[common.BOT_SECTION][common.REAL_TOKEN_OPTION]
+                g_v.REAL_TOKEN = str(cfg[common.BOT_SECTION][common.REAL_TOKEN_OPTION])
                 logger.info("real token: {:s}".format(g_v.REAL_TOKEN))
             if cfg.has_option(common.BOT_SECTION, common.TEST_TOKEN_OPTION):
-                g_v.TEST_TOKEN = cfg[common.BOT_SECTION][common.TEST_TOKEN_OPTION]
+                g_v.TEST_TOKEN = str(cfg[common.BOT_SECTION][common.TEST_TOKEN_OPTION])
                 logger.info("test token: {:s}".format(g_v.TEST_TOKEN))
 
     def load_cameras(self):

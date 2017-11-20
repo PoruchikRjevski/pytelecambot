@@ -101,8 +101,8 @@ def start_work():
     system_info_dmn = MachineDaemon()
 
     if g_v.BOT_ENABLED:
-        work_token = common.TEST_TOKEN_OPTION if g_v.TEST_ENABLED else common.REAL_TOKEN_OPTION
-        telegram_bot = Tele_Bot(work_token, model, system_info_dmn)
+        work_token = g_v.TEST_TOKEN if g_v.TEST_ENABLED else g_v.REAL_TOKEN
+        telegram_bot = TelegramBot(work_token, model, system_info_dmn)
         telegram_bot.do_work()
     else:
         try:
@@ -120,8 +120,6 @@ def true_exit():
 
 
 def main():
-    init_logging()
-
     update_ver()
 
     opt_parser = OptionParser(version=ver.V_FULL)
@@ -132,6 +130,8 @@ def main():
     setup_options(opts)
 
     g_v.PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
+
+    init_logging()
 
     config_path = os.path.join(g_v.PROJECT_PATH, common.CONFIG_DIR_PATH)
     if not os.path.exists(config_path):

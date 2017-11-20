@@ -1,0 +1,8 @@
+[2017-11-20 12:03:06,436] : [INFO    ] : [MainThread     ] : [pytelecambot.ConfigLoader     ] : [load_config                   ] : [36  ] : [real token: 364842219:AAEl03t9yKk0qxz0afTWDLwVaPRIzWpYRZc]
+[2017-11-20 12:03:06,436] : [INFO    ] : [MainThread     ] : [pytelecambot.ConfigLoader     ] : [load_config                   ] : [39  ] : [test token: 456190170:AAFerwgfG0IkLGQXFfTU7uAo4QPTIZ_WhDY]
+[2017-11-20 12:03:06,436] : [INFO    ] : [MainThread     ] : [pytelecambot.ConfigLoader     ] : [set_cameras_path              ] : [24  ] : [Cameras path: /home/kozlov_vn/Projects/pytelecam/pytelecambot/src/../config/cameras.ini ]
+[2017-11-20 12:03:06,446] : [INFO    ] : [MainThread     ] : [pytelecambot.main             ] : [start_work                    ] : [105 ] : [token test_token]
+[2017-11-20 12:03:58,302] : [INFO    ] : [MainThread     ] : [pytelecambot.ConfigLoader     ] : [load_config                   ] : [36  ] : [real token: 364842219:AAEl03t9yKk0qxz0afTWDLwVaPRIzWpYRZc]
+[2017-11-20 12:03:58,302] : [INFO    ] : [MainThread     ] : [pytelecambot.ConfigLoader     ] : [load_config                   ] : [39  ] : [test token: 456190170:AAFerwgfG0IkLGQXFfTU7uAo4QPTIZ_WhDY]
+[2017-11-20 12:03:58,302] : [INFO    ] : [MainThread     ] : [pytelecambot.ConfigLoader     ] : [set_cameras_path              ] : [24  ] : [Cameras path: /home/kozlov_vn/Projects/pytelecam/pytelecambot/src/../config/cameras.ini ]
+[2017-11-20 12:03:58,311] : [INFO    ] : [MainThread     ] : [pytelecambot.main             ] : [start_work                    ] : [105 ] : [token 456190170:AAFerwgfG0IkLGQXFfTU7uAo4QPTIZ_WhDY]
