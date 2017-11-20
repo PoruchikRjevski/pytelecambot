@@ -41,6 +41,7 @@ C_C_OFF                 = 'Выключить камеру'
 C_MD_ON                 = 'Включить детектирование'
 C_MD_OFF                = 'Выключить детектирование'
 C_C_LAST                = 'Последнее'
+C_C_NOW_ALL            = 'Last all'
 C_C_NOW                 = 'Сфотографировать'
 
 NO_DEL_L                = [C_C_NOW, C_R_ACC, C_R_KICK, C_R_NEXT, C_U_REG, C_V_UREG, C_A_WHO_ARE, C_A_WHO_R, C_A_WHO_UR]
@@ -55,6 +56,7 @@ for row in GET_M_L:
 ADMIN_M_L                 = [[C_A_STOP, C_A_RES],
                              [C_A_WHO_R, C_A_WHO_UR, C_A_WHO_ARE],
                              [C_CAMS],
+                             [C_C_NOW_ALL],
                              [C_A_SYS_INFO],
                              [C_UPD]]
 ADMIN_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -78,6 +80,7 @@ for row in KICK_M_L:
 
 VIEWERS_M_L               = [[C_V_UREG],
                              [C_CAMS],
+                             [C_C_NOW_ALL],
                              [C_UPD]]
 VIEWERS_KB = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
 for row in VIEWERS_M_L:
