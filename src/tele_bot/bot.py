@@ -21,6 +21,9 @@ logger = logging.getLogger("{:s}.TelegramBot".format(common.SOLUTION))
 class TelegramBot(telebot.TeleBot):
     def __init__(self, token, u_model, m_daemon):
         super().__init__(token)
+
+        logger.info("bot created with token: {:s}".format(token))
+
         bot = self
 
         self.__stop_f = False
@@ -285,11 +288,11 @@ class TelegramBot(telebot.TeleBot):
         if self.__model.is_alerts_exists():
             alert = self.__model.get_alert()
 
-            if alert.type == cmn.T_CAM_NOW_PHOTO:
+            if alert.type == common.T_CAM_NOW_PHOTO:
                 self.send_photo(int(alert.who), photo=open(alert.img, 'rb'))
-            elif alert.type in (cmn.T_SYS_NOW_INFO, cmn.T_SYS_ALERT):
+            elif alert.type in (common.T_SYS_NOW_INFO, common.T_SYS_ALERT):
                 self.send_message(ADMIN_ID, alert.msg)
-            elif alert.type == cmn.T_CAM_SW:
+            elif alert.type == common.T_CAM_SW:
                 chat = telebot.types.Chat(ADMIN_ID, 'private')
                 msg = telebot.types.Message(0, 0, 0, chat, 0, [])
                 msg.text = alert.cam
@@ -306,13 +309,13 @@ class TelegramBot(telebot.TeleBot):
 
                     self.send_message(s_id, alert.msg)
 
-            # if alert.type == cmn.T_CAM_MOVE_PHOTO:
+            # if alert.type == common.T_CAM_MOVE_PHOTO:
             #     self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
             #     out_log(alert.msg)
-            # elif alert.type == cmn.T_CAM_MOVE_MP4:
+            # elif alert.type == common.T_CAM_MOVE_MP4:
             #     self.send_video(ADMIN_ID, data=open(alert.img, 'rb'))
             #     out_log(alert.msg)
-            # elif alert.type == cmn.T_CAM_SW:
+            # elif alert.type == common.T_CAM_SW:
             #     if not alert.cam is None:
             #         chat = telebot.types.Chat(ADMIN_ID, 'private')
             #         msg = telebot.types.Message(0, 0, 0, chat, 0, [])
@@ -320,7 +323,7 @@ class TelegramBot(telebot.TeleBot):
             #         self.__show_cam_m(msg)
             #
             #     self.send_message(ADMIN_ID, alert.msg)
-            # elif alert.type == cmn.T_CAM_NOW_PHOTO:
+            # elif alert.type == common.T_CAM_NOW_PHOTO:
             #     self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
             #     out_log(alert.msg)
 

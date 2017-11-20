@@ -16,19 +16,12 @@ logger = logging.getLogger("{:s}.ConfigLoader".format(common.SOLUTION))
 
 class ConfigLoader:
     def __init__(self):
-        self.__cameras_p = None
-        self.__config_p = None
+        pass
 
-    def set_cameras_path(self, c_path):
-        self.__cameras_p = c_path
-        logger.info("Cameras path: {:s} ".format(c_path))
-
-    def set_config_path(self, c_path):
-        self.__config_p = c_path
-
-    def load_config(self):
+    @staticmethod
+    def load_config(c_path):
         cfg = configparser.ConfigParser()
-        cfg.read(self.__config_p)
+        cfg.read(c_path)
 
         if cfg.has_section(common.BOT_SECTION):
             if cfg.has_option(common.BOT_SECTION, common.REAL_TOKEN_OPTION):
@@ -38,9 +31,10 @@ class ConfigLoader:
                 g_v.TEST_TOKEN = str(cfg[common.BOT_SECTION][common.TEST_TOKEN_OPTION])
                 logger.info("test token: {:s}".format(g_v.TEST_TOKEN))
 
-    def load_cameras(self):
+    @staticmethod
+    def load_cameras(c_path):
         cfg = configparser.ConfigParser()
-        cfg.read(self.__cameras_p)
+        cfg.read(c_path)
 
         out_d = os.path.join(g_v.PROJECT_PATH, common.OUT_DIR_PATH, datetime.date.today().__str__())
         common.make_dir(out_d)

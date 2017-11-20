@@ -74,16 +74,14 @@ def load_config(cfg_loader):
         logger.error("config.ini is not exists {:s}".format(config_path))
         true_exit()
 
-    cfg_loader.set_config_path(config_path)
-    cfg_loader.load_config()
+    cfg_loader.load_config(config_path)
 
     cameras_path = os.path.join(g_v.PROJECT_PATH, common.CONFIG_DIR_PATH, common.CAMERAS_FILE)
     if not os.path.exists(cameras_path):
         logger.error("cameras.ini is not exists {:s}".format(cameras_path))
         true_exit()
-    cfg_loader.set_cameras_path(cameras_path)
 
-    return cfg_loader.load_cameras()
+    return cfg_loader.load_cameras(cameras_path)
 
 
 def start_work():
@@ -111,7 +109,6 @@ def start_work():
         except KeyboardInterrupt:
             model.switch_off_cameras()
             system_info_dmn.stop_work()
-
 
 
 def true_exit():

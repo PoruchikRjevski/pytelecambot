@@ -24,11 +24,11 @@ C_BACK                  = 'Назад'
 C_UPD                   = 'Обновить меню'
 C_MENU                   = 'Меню'
 
-C_A_RES                 = 'restart'
-C_A_STOP                = 'stop'
-C_A_WHO_R               = 'reg list'
-C_A_WHO_UR              = 'unreg list'
-C_A_WHO_ARE             = 'viewers'
+C_A_RES                 = 'RESTART'
+C_A_STOP                = 'STOP'
+C_A_WHO_R               = 'reg l'
+C_A_WHO_UR              = 'unreg l'
+C_A_WHO_ARE             = 'viewers l'
 C_A_SYS_INFO            = "sys info"
 
 C_R_ACC                 = 'accept'

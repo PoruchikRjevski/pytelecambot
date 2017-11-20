@@ -2,8 +2,8 @@ __pycache__/
 .idea/workspace.xml
 .idea/pytelecambot.iml
 .idea/misc.xml
-LOG/
-OUT/
+log
+out
 misc/cameras.ini
 !L_F/im_0.jpg
 !im_1.jpg
