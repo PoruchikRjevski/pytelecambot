@@ -11,12 +11,25 @@ import numpy as np
 from observer import Camera
 from observer.cam_defs import *
 
-SOURCE = 0
-PROCESSED = 1
-DELTA = 2
-THRESHOLD = 3
-DILATE = 4
-ENDLESS = 5
+CONTROL = "Control"
+SOURCE = "Source"
+PROCESSED = "Processed"
+DELTA = "Delta"
+THRESHOLD = "Threshold"
+DILATE = "Dilate"
+ENDLESS = "Endless"
+
+gauss_kern_w = Value("i", 21)
+gauss_kern_h = Value("i", 21)
+
+thresh_min = Value("i", 25)
+thresh_max = Value("i", 255)
+
+cont_min = Value("i", 2000)
+cont_max = Value("i", 30000)
+
+working_f = Value("i", 1)
+working_f.value = True
 
 
 def grabber_loop(frames, working, g_kw, g_kh, t_min, t_max, c_min, c_max):
@@ -45,33 +58,8 @@ def grabber_loop(frames, working, g_kw, g_kh, t_min, t_max, c_min, c_max):
             detected, with_contours = Camera.check_contours(thresh, cur, c_min, c_max)
 
             frames.putnowait((frame_cur, delta, thresh, dilate, with_contours))
-
-            if type.value == SOURCE:
-                frames.putnowait(cur)
-
-
-            if type.value == PROCESSED:
-                frames.putnowait(cur)
-
-            # get diff
-            if type.value == DELTA:
-                frames.putnowait(cur)
-
-            if type.value == THRESHOLD:
-                frames.putnowait(cur)
-            thresh = Camera.get_dilate(thresh)
-            if type.value == DILATE:
-                frames.putnowait(cur)
-
-            detected, cur = Camera.check_contours(thresh, cur, c_min, c_max)
-            if type.value == ENDLESS:
-                frames.putnowait(cur)
-
         else:
             time.sleep(REC_TMT_SHIFT)
-
-
-
 
 
 def nothing(x):
@@ -80,17 +68,6 @@ def nothing(x):
 
 def main():
     # init variables
-    gauss_kern_w = Value("i", 21)
-    gauss_kern_h = Value("i", 21)
-
-    thresh_min = Value("i", 25)
-    thresh_max = Value("i", 255)
-
-    cont_min = Value("i", 2000)
-    cont_max = Value("i", 30000)
-
-    working_f = Value("i", 1)
-    working_f.value = True
 
     # start process
     frames = Queue()
@@ -106,14 +83,17 @@ def main():
     # grabber_pr.start() # todo uncomment
 
     # create elements
-    cv2.namedWindow('Control')
+    cv2.namedWindow(CONTROL)
+    cv2.namedWindow(SOURCE)
+    cv2.namedWindow(PROCESSED)
 
-    # when esc - do close all and stop process
+    cv2.createTrackbar('Gauss blur kernel width', CONTROL, 0, 255, nothing)
 
     while (1):
         if frames.qsize() > 0:
+            source, delta, thresh, dilate, with_contours = frames.get_nowait()
 
-            cv2.imshow('Control', frames.get_nowait())
+            cv2.imshow(CONTROL, source)
 
         k = cv2.waitKey(1) & 0xFF
         if k == 27:
@@ -124,6 +104,8 @@ def main():
     cv2.destroyAllWindows()
 
 
+
+ # -----
     last = cv2.imread("../misc/img_0.jpg")
     last = cv2.resize(last, (640, 480))
     cur = cv2.imread("../misc/img_1.jpg")

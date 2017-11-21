@@ -296,7 +296,7 @@ class Camera:
             if cv2.contourArea(c) < min or cv2.contourArea(c) > max:
                 continue
 
-            detected_diff = True
+            detected = True
             (x, y, w, h) = cv2.boundingRect(c)
             cv2.rectangle(out, (x, y), (x + w, y + h), (0, 255, 0), 1)
 
