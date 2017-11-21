@@ -367,14 +367,14 @@ class Camera:
         im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for c in cnts:
-            if cv2.contourArea(c) < 2000 or cv2.contourArea(c) > 30000:
+            if cv2.contourArea(c) < 5000 or cv2.contourArea(c) > 30000:
                 continue
 
             detected_diff = True
             (x, y, w, h) = cv2.boundingRect(c)
-            cv2.rectangle(frame_cur, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.rectangle(cur, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-        return detected_diff, frame_cur
+        return detected_diff, cur
 
     def __do_write_proc(self, working_f, rec_f, rec_buf):
         while working_f.value:
