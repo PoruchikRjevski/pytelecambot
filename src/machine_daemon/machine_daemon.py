@@ -160,7 +160,7 @@ class MachineDaemon:
     def __get_ip_by_hldns():
         msg = ""
 
-        _, _, ip_addr = socket.gethostname(HLDNS_HOST_NAME)
+        ip_addr = socket.gethostbyname(HLDNS_HOST_NAME)
 
         if ip_addr:
             msg = "{:s}\nIP: {:s}\n{:s}".format(common.MID_EDGE,
