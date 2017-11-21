@@ -438,19 +438,6 @@ class Camera:
 
         return frame
 
-    def __write_move_photo(self, frame):
-        frame = self.__add_timestamp(frame)
-
-        move_ph_p = os.path.join(self.__path_d, "{:s}_MOVE.jpg".format(self.__time_stamp))
-
-        cv2.imwrite(move_ph_p, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
-
-        self.__out_deq.append(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
-                                        cmn.MOVE_ALERT.format(str(self.__c_id),
-                                                                self.__c_name,
-                                                                self.__time_stamp),
-                                        move_ph_p))
-
     def __do_work_test(self):
         once = True
         obs_t = time.time()
