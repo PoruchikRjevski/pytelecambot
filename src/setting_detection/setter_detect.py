@@ -19,6 +19,10 @@ THRESHOLD = "Threshold"
 DILATE = "Dilate"
 ENDLESS = "Endless"
 
+
+GAUSS_W = 'Gauss blur kernel width'
+GAUSS_H = 'Gauss blur kernel height'
+
 gauss_kern_w = Value("i", 21)
 gauss_kern_h = Value("i", 21)
 
@@ -57,13 +61,17 @@ def grabber_loop(frames, working, g_kw, g_kh, t_min, t_max, c_min, c_max):
 
             detected, with_contours = Camera.check_contours(thresh, cur, c_min, c_max)
 
-            frames.putnowait((frame_cur, delta, thresh, dilate, with_contours))
+            frames.putnowait((cur, frame_cur, delta, thresh, dilate, with_contours))
         else:
             time.sleep(REC_TMT_SHIFT)
 
 
-def nothing(x):
-    pass
+def change_blur_w(x):
+    gauss_kern_w.value = x
+
+
+def change_blur_h(x):
+    gauss_kern_h.value = x
 
 
 def main():
@@ -84,77 +92,26 @@ def main():
 
     # create elements
     cv2.namedWindow(CONTROL)
-    cv2.namedWindow(SOURCE)
     cv2.namedWindow(PROCESSED)
 
-    cv2.createTrackbar('Gauss blur kernel width', CONTROL, 0, 255, nothing)
+    cv2.createTrackbar(GAUSS_W, CONTROL, 0, 50, change_blur_w)
+    cv2.setTrackbarPos(GAUSS_W, CONTROL, gauss_kern_w.value)
+    cv2.createTrackbar(GAUSS_H, CONTROL, 0, 50, change_blur_h)
+    cv2.setTrackbarPos(GAUSS_H, CONTROL, gauss_kern_h.value)
+
 
     while (1):
         if frames.qsize() > 0:
-            source, delta, thresh, dilate, with_contours = frames.get_nowait()
+            source, processed, delta, thresh, dilate, with_contours = frames.get_nowait()
 
             cv2.imshow(CONTROL, source)
+            cv2.imshow(PROCESSED, processed)
 
         k = cv2.waitKey(1) & 0xFF
         if k == 27:
             break
-
 
     working_f.value = False
-    cv2.destroyAllWindows()
-
-
-
- # -----
-    last = cv2.imread("../misc/img_0.jpg")
-    last = cv2.resize(last, (640, 480))
-    cur = cv2.imread("../misc/img_1.jpg")
-    cur = cv2.resize(cur, (640, 480))
-
-    frame_last = Camera.__proc_for_detect(last, 21, 21)
-    frame_cur = Camera.__proc_for_detect(cur, 21, 21)
-
-    # get diff
-    delta = cv2.absdiff(frame_last, frame_cur)
-    # 25, 255
-    # thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
-    thresh = Camera.__get_thresh(delta, 25, 255)
-    # thresh = cv2.dilate(thresh, None, iterations=1)
-    thresh = Camera.__get_dilate(thresh)
-
-    detected, cur = Camera.__check_contours(thresh, cur, 2000, 10000)
-
-
-    img = cv2.resize(img, (640, 480))
-    # img = np.zeros((300, 512, 3), np.uint8)
-    cv2.namedWindow('image')
-
-    # create trackbars for color change
-    cv2.createTrackbar('R', 'image', 0, 255, nothing)
-    cv2.createTrackbar('G', 'image', 0, 255, nothing)
-    cv2.createTrackbar('B', 'image', 0, 255, nothing)
-
-    # create switch for ON/OFF functionality
-    switch = '0 : OFF \n1 : ON'
-    cv2.createTrackbar(switch, 'image', 0, 1, nothing)
-
-    while (1):
-        cv2.imshow('image', img)
-        k = cv2.waitKey(1) & 0xFF
-        if k == 27:
-            break
-
-        # get current positions of four trackbars
-        r = cv2.getTrackbarPos('R', 'image')
-        g = cv2.getTrackbarPos('G', 'image')
-        b = cv2.getTrackbarPos('B', 'image')
-        s = cv2.getTrackbarPos(switch, 'image')
-
-        if s == 0:
-            img[:] = 0
-        else:
-            img[:] = [b, g, r]
-
     cv2.destroyAllWindows()
 
 

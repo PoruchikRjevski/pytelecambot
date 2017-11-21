@@ -319,7 +319,7 @@ class Camera:
         # thresh = cv2.dilate(thresh, None, iterations=1)
         thresh = Camera.get_dilate(thresh)
 
-        detected, cur = Camera.check_contours(thresh, cur, 2000, 10000)
+        detected, cur = Camera.check_contours(thresh, cur, 2000, 40000)
 
         # im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         #
