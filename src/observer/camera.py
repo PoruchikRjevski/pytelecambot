@@ -242,6 +242,9 @@ class Camera:
 
     def __do_work_proc(self, working_f, md_f, now_frame_q, out, rec_f, rec_buf):
         cam_h = cv2.VideoCapture(int(self.__c_id))
+        # res_x, res_y = cam_h.set_format(HI_W, HI_H)
+        cam_h.set(3, HI_W)
+        cam_h.set(4, HI_H)
         # cam_work = True
 
         rec_fr_cntr = 0
@@ -316,9 +319,9 @@ class Camera:
                     #             mv_detected_ts = ts_p
 
                     detected, frame_rs_mv = Camera.__is_differed(last_frame, frame_rs)
-                    frame_ts_mv = self.__add_frame_timestamp(frame_rs_mv, ts_fr)
 
                     if detected:
+                        frame_ts_mv = self.__add_frame_timestamp(frame_rs_mv, ts_fr)
                         file_d_mv = self.__write_frame_to_file(frame_ts_mv, ts_p, SUFF_TIMELAPSE)
                         out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
                                                  cmn.MOVE_ALERT.format(str(self.__c_id),
@@ -354,6 +357,9 @@ class Camera:
     @staticmethod
     def __is_differed(last, cur):
         detected_diff = False
+
+        if last is None or cur is None:
+            return False, None
 
         # some prepares
         frame_last = Camera.__proc_for_detect(last)
