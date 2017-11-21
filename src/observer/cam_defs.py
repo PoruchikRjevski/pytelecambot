@@ -13,6 +13,8 @@ OBSERVING_TMT               = 1 / OBSERVE_FPS
 
 TIMELAPSE_TMT               = 10
 
+GAUSS_BLUR_KERN_SIZE        = 21
+
 HI_W                        = 1280
 HI_H                        = 720
 

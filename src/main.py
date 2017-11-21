@@ -21,6 +21,7 @@ from time_checker import *
 from machine_daemon import *
 from logger import init_logging, log_func_name
 import global_vars as g_v
+import setter_detect
 
 
 logger = logging.getLogger("{:s}.main".format(common.SOLUTION))
@@ -55,6 +56,15 @@ def set_options(parser):
                       action="store_true", dest="test",
                       default=False,
                       help="use test bot")
+
+    parser.add_option("--show",
+                      action="store_true", dest="show",
+                      default=False,
+                      help="show cameras from config")
+    parser.add_option("--setup",
+                      action="store_true", dest="setup",
+                      default=False,
+                      help="uses with position of cam in list")
 
 
 def setup_options(opts):
@@ -116,6 +126,31 @@ def true_exit():
     sys.exit(0)
 
 
+def bad_exit():
+    logger.error("{:s} was closed. Because error, ...".format(common.SOLUTION))
+    sys.exit(0)
+
+
+def show_cameras():
+    cfg_loader = ConfigLoader()
+    cameras_list = load_config(cfg_loader)
+
+    cameras_text = "\n".join(["{:s} - {:s}".format(str(cameras_list.index(cam)), str(cam.cam_name)) for cam in cameras_list])
+    print("Cameras:\n{:s}".format(cameras_text))
+
+
+def try_setup_cam(id):
+    cfg_loader = ConfigLoader()
+    cameras_list = load_config(cfg_loader)
+
+    if id < len(cameras_list):
+        if setter_detect.do_setup(cameras_list[id]):
+            cameras_path = os.path.join(g_v.PROJECT_PATH, common.CONFIG_DIR_PATH, common.CAMERAS_FILE)
+            cfg_loader.save_cameras(cameras_list, cameras_path)
+    else:
+        print("bad id")
+
+
 def main():
     update_ver()
 
@@ -138,7 +173,18 @@ def main():
     out_path = os.path.join(g_v.PROJECT_PATH, common.OUT_DIR_PATH)
     common.make_dir(out_path)
 
-    start_work()
+    if opts.setup and not opts.show:
+        if args:
+            id = -1
+            try:
+                id = int(args[0])
+                try_setup_cam(id)
+            except ValueError:
+                logger.error("bad args")
+    elif opts.show and not opts.setup:
+        show_cameras()
+    else:
+        start_work()
 
     true_exit()
 

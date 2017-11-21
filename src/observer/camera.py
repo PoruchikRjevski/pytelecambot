@@ -16,13 +16,17 @@ import cv2
 
 
 class Camera:
-    def __init__(self, c_id, c_name, out_d, work_f=True, m_detect=False, cont_min=0, cont_max=100):
+    def __init__(self, c_id, c_name,
+                 out_d, work_f=True, m_detect=False,
+                 cont_min=0, cont_max=100, thresh_min = 0, thresh_max = 100):
         self.__c_id = c_id
         self.__c_name = c_name
         self.__autostart = work_f
         self.__motion_detection = m_detect
         self.__contours_min = cont_min
         self.__contours_max = cont_max
+        self.__thresh_min = thresh_min
+        self.__thresh_max = thresh_max
 
         self.__work_f = work_f
 
@@ -65,6 +69,22 @@ class Camera:
 
         # self.__now_frame_f = Value("i", 1)
         # self.__now_frame_f.value = False
+
+    @property
+    def contours(self):
+        return self.__contours_min, self.__contours_max
+
+    @contours.setter
+    def contours(self, conts):
+        self.__contours_min, self.__contours_max = conts
+
+    @property
+    def threshold(self):
+        return self.__thresh_min, self.__thresh_max
+
+    @threshold.setter
+    def threshold(self, threshes):
+        self.__thresh_min, self.__thresh_max = threshes
 
     def __get_test_frame(self):
         if self.__test:
@@ -200,7 +220,7 @@ class Camera:
         # res_x, res_y = cam_h.set_format(HI_W, HI_H)
         cam_h.set(3, HI_W)
         cam_h.set(4, HI_H)
-        cam_h.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        # cam_h.set(cv2.CAP_PROP_AUTOFOCUS, 1)
         # cam_work = True
 
         rec_fr_cntr = 0
@@ -252,6 +272,7 @@ class Camera:
                                                                        ts_fr),
                                                  file_d_mv,
                                                  self.__c_name))
+                        detected = False
 
                     obs_t = obs_t_c
 
@@ -404,6 +425,10 @@ class Camera:
     @property
     def state(self):
         return self.__working_f.value
+
+    @property
+    def cam_autostart(self):
+        return self.__autostart
 
     @state.setter
     def state(self, state):
