@@ -1,8 +1,10 @@
-VIDEO_REC_TIME_FULL         = 5
-VIDEO_REC_TIME_PRE          = 1
+VIDEO_REC_TIME_FULL         = 2
+VIDEO_REC_TIME_PRE          = 2
 
 VIDEO_REC_FPS               = 30
 OBSERVE_FPS                 = 1
+
+PREVIEW_FPS_PASS            = 5
 
 PRE_REC_BUF_SZ              = VIDEO_REC_TIME_PRE * VIDEO_REC_FPS
 FULL_REC_BUF_SZ             = VIDEO_REC_TIME_FULL * VIDEO_REC_FPS
@@ -20,6 +22,9 @@ HI_H                        = 720
 
 LO_W                        = 640
 LO_H                        = 480
+
+PREV_W                      = 480
+PREV_H                      = 320
 
 LAST_F_SIZE                 = 0.5
 LAST_F_TXT_POS              = (15, 15)

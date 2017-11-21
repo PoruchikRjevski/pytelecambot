@@ -5,6 +5,7 @@ import threading
 from multiprocessing import Value, Queue, Process
 import queue
 import copy
+from operator import itemgetter
 
 import common as cmn
 from logger import *
@@ -216,16 +217,22 @@ class Camera:
         pass
 
     def __do_work_proc(self, working_f, md_f, now_frame_q, out, rec_f, rec_buf):
+        out_big = None
+        out_small = None
         cam_h = cv2.VideoCapture(int(self.__c_id))
         # res_x, res_y = cam_h.set_format(HI_W, HI_H)
         cam_h.set(3, HI_W)
         cam_h.set(4, HI_H)
-        # cam_h.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        cam_h.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+        pre_buf = queue.deque()
         # cam_work = True
 
         rec_fr_cntr = 0
         recording = False
+        recorded_frames = 0
+        recorded_small = 0
         mv_detected_ts = None
+        recorded_main_frame = FULL_REC_BUF_SZ
 
         rec_t = time.time()
         obs_t = rec_t
@@ -237,6 +244,7 @@ class Camera:
         last_frame = None
         last_frame_p = ''
         frame_ts = last_frame
+        file_d_mv_small = ""
 
         # while working_f.value and cam_work:
         while working_f.value and cam_h.isOpened():
@@ -246,57 +254,109 @@ class Camera:
 
             if rec_t_c >= REC_TMT:
                 rec_t = rec_t_c
+                get_f_t = time.time()
                 ret, frame = cam_h.read()
+                get_f_t = time.time() - get_f_t
+                print("get frame t: {:f}".format(get_f_t))
 
                 if not ret:
                     time.sleep(REC_TMT_SHIFT)
                     continue
 
                 # process frame
-                frame_rs = self.__resize_frame(frame, HI_W, HI_H)
+                frame_rs = self.__resize_frame(frame, LO_W, LO_H)
 
                 timestamp = datetime.datetime.now()
                 ts_fr = timestamp.strftime(cmn.TIMESTAMP_FRAME_STR)
                 ts_p = timestamp.strftime(cmn.TIMESTAMP_PATH_STR)
+                frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
 
                 obs_t_c = cur_t - obs_t
-                if obs_t_c >= OBSERVING_TMT:
+                if obs_t_c >= OBSERVING_TMT and recorded_main_frame >= FULL_REC_BUF_SZ:
+                    det_t = time.time()
                     detected, frame_rs_mv = Camera.__is_differed(last_frame, frame_rs)
+                    det_t = time.time() - det_t
+                    print("detect t: {:f}".format(det_t))
 
                     if detected:
-                        frame_ts_mv = self.__add_frame_timestamp(frame_rs_mv, ts_fr)
-                        file_d_mv = self.__write_frame_to_file(frame_ts_mv, ts_p, SUFF_TIMELAPSE)
-                        out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
-                                                 cmn.MOVE_ALERT.format(str(self.__c_id),
-                                                                       self.__c_name,
-                                                                       ts_fr),
-                                                 file_d_mv,
-                                                 self.__c_name))
-                        detected = False
+                        recording = True
+                        recorded_small = 0
+                        recorded_main_frame = 0
 
+                        if out_small is None:
+                            frame_ts_mv = self.__add_frame_timestamp(frame_rs_mv, ts_fr)
+                            file_d_mv = self.__write_frame_to_file(frame_ts_mv, ts_p, SUFF_MOVE)
+                            out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
+                                                     cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                                           self.__c_name,
+                                                                           ts_fr),
+                                                     file_d_mv,
+                                                     self.__c_name))
+
+                            file_d_mv_small = file_d_mv.replace(".jpg", "_small.mp4")
+                            out_small = cv2.VideoWriter(file_d_mv_small,
+                                                        # cv2.VideoWriter_fourcc(*'MP4V'),
+                                                        cv2.VideoWriter_fourcc(*'H264'),
+                                                        VIDEO_REC_FPS,
+                                                        (PREV_W, PREV_H))
+
+                            while pre_buf:
+                                out_small.write(pre_buf.popleft())
+                    else:
+                        recorded_main_frame = FULL_REC_BUF_SZ
+
+                        if out_small is not None:
+                            recording = False
+                            out_small.release()
+                            out_small = None
+                            out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_MP4,
+                                                     cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                                           self.__c_name,
+                                                                           ts_fr),
+                                                     file_d_mv_small,
+                                                     self.__c_name))
                     obs_t = obs_t_c
 
+                if recording:
+                    # if recorded_small >= PREVIEW_FPS_PASS:
+                    rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
+                    out_small.write(rec_frame)
+                    recorded_main_frame += 1
+                    #     recorded_small = 0
+                    # else:
+                    #     recorded_small += 1
+                else:
+                    # if recorded_small >= PREVIEW_FPS_PASS:
+                    rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
+                    if len(pre_buf) >= PRE_REC_BUF_SZ:
+                        pre_buf.popleft()
+                    pre_buf.append(rec_frame)
+                    #     recorded_small = 0
+                    # else:
+                    #     recorded_small += 1
+
                 last_frame = frame_rs
-                frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
 
                 cur_wrt_t = time.time()
                 if (time.time() - wrt_t) >= TIMELAPSE_TMT:
                     wrt_t = cur_wrt_t
                     file_p = self.__write_frame_to_file(frame_ts, ts_p, SUFF_TIMELAPSE)
 
-                if now_frame_q.qsize() > 0:
-                    while now_frame_q.qsize() > 0:
-                        file_p = self.__write_frame_to_file(frame_ts, ts_p, SUFF_NOW)
-                        out.put_nowait(cmn.Alert(cmn.T_CAM_NOW_PHOTO,
-                                                 cmn.NOW_ALERT.format(str(self.__c_id),
-                                                                      self.__c_name,
-                                                                      ts_fr),
-                                                 file_p,
-                                                 self.__c_name,
-                                                 str(now_frame_q.get_nowait())))
+                while not now_frame_q.empty():
+                    file_p = self.__write_frame_to_file(frame_ts, ts_p, SUFF_NOW)
+                    out.put_nowait(cmn.Alert(cmn.T_CAM_NOW_PHOTO,
+                                             cmn.NOW_ALERT.format(str(self.__c_id),
+                                                                  self.__c_name,
+                                                                  ts_fr),
+                                             file_p,
+                                             self.__c_name,
+                                             str(now_frame_q.get_nowait())))
             else:
                 if rec_t_c <= REC_TMT_SHIFT:
                     time.sleep(REC_TMT_SHIFT)
+
+            loop_t = time.time() - cur_t
+            print("loop t: {:f}".format(loop_t))
 
         self.state = False
 
@@ -309,17 +369,43 @@ class Camera:
         return cv2.dilate(thresh, None, iterations=1)
 
     @staticmethod
-    def check_contours(thresh, out, min, max):
+    def check_contours(thresh, out, c_min, c_max):
         detected = False
         im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        for c in cnts:
-            if cv2.contourArea(c) < min or cv2.contourArea(c) > max:
-                continue
+        true_cont = [c for c in cnts if cv2.contourArea(c) < c_min or cv2.contourArea(c) > c_max]
 
+        if len(true_cont) > 0:
             detected = True
-            (x, y, w, h) = cv2.boundingRect(c)
-            cv2.rectangle(out, (x, y), (x + w, y + h), (0, 255, 0), 1)
+
+            if len(true_cont) > 3:
+                coords = []
+                for c in true_cont:
+                    (x, y, w, h) = cv2.boundingRect(c)
+                    coords.append((x, y, w, h))
+
+                l_l = min(coords, key=lambda item: item[0])
+                # l_l = max(coords, key=itemgetter(1))
+                l_u = min(coords, key=lambda item: item[1])
+                # l_u = max(coords, key=itemgetter(2))
+                r_r = max(coords, key=lambda item: item[2])
+                # r_r = max(coords, key=itemgetter(3))
+                r_b = max(coords, key=lambda item: item[3])
+                # r_b = max(coords, key=itemgetter(4))
+
+                cv2.rectangle(out, (l_l[0], l_u[1]), (r_r[0] + r_r[2], r_b[1] + r_b[3]), (0, 255, 0), 2)
+            else:
+                for c in true_cont:
+                    (x, y, w, h) = cv2.boundingRect(c)
+                    cv2.rectangle(out, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        # for c in cnts:
+        #     if cv2.contourArea(c) < c_min or cv2.contourArea(c) > c_max:
+        #         continue
+        #
+        #     detected = True
+        #     (x, y, w, h) = cv2.boundingRect(c)
+        #     cv2.rectangle(out, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         return detected, out
 

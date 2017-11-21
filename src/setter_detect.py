@@ -39,40 +39,58 @@ working_f = Value("i", 1)
 working_f.value = True
 
 
-HEIGHT = 240
-WIDTH = 320
+HEIGHT = 480
+WIDTH = 640
 
 
-def grabber_loop(frames, working, t_min, t_max, c_min, c_max):
+def grabber_loop(cam_id, frames, working, t_min, t_max, c_min, c_max):
     # init cam blabla
-    cur_d = os.getcwd()
-    last = cv2.imread("/home/kozlov_vn/Projects/img_0.jpg")
-    last = cv2.resize(last, (WIDTH, HEIGHT))
-    cur = cv2.imread("/home/kozlov_vn/Projects/img_1.jpg")
-    cur = cv2.resize(cur, (WIDTH, HEIGHT))
+    # cur_d = os.getcwd()
+    # last = cv2.imread("/home/kozlov_vn/Projects/img_0.jpg")
+    # last = cv2.resize(last, (WIDTH, HEIGHT))
+    # cur = cv2.imread("/home/kozlov_vn/Projects/img_1.jpg")
+    # cur = cv2.resize(cur, (WIDTH, HEIGHT))
+
+    cam_h = cv2.VideoCapture(int(cam_id))
 
     rec_t = time.time()
-    while working.value:
+    last_f = None
+
+    while working.value and cam_h.isOpened():
+
         cur_t = time.time()
         # check_t = cur_t
         rec_t_c = cur_t - rec_t
 
         if rec_t_c >= REC_TMT:
             rec_t = rec_t_c
-            frame_last = Camera.proc_for_detect(last, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
-            frame_cur = Camera.proc_for_detect(cur, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
 
-            delta = cv2.absdiff(frame_last, frame_cur)
+            ret, frame = cam_h.read()
+            if not ret:
+                time.sleep(REC_TMT_SHIFT)
+                continue
 
-            thresh = Camera.get_thresh(delta, t_min.value, t_max.value)
+            cur = cv2.resize(frame, (WIDTH, HEIGHT))
 
-            dilate = Camera.get_dilate(thresh)
+            if last_f is not None:
+                frame_last = Camera.proc_for_detect(last_f, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
+                frame_cur = Camera.proc_for_detect(cur, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
 
-            detected, with_contours = Camera.check_contours(thresh, cur.copy(), c_min.value, c_max.value)
+                delta = cv2.absdiff(frame_last, frame_cur)
 
-            frames.put_nowait((delta, dilate, with_contours))
+                thresh = Camera.get_thresh(delta, t_min.value, t_max.value)
+
+                dilate = Camera.get_dilate(thresh)
+
+                detected, with_contours = Camera.check_contours(thresh, cur.copy(), c_min.value, c_max.value)
+
+                frames.put_nowait((dilate, with_contours))
+
+            last_f = cur
         else:
             time.sleep(REC_TMT_SHIFT)
+
+    cam_h.release()
 
 
 def change_thresh_min(x):
@@ -104,10 +122,8 @@ def change_cont_max(x):
 
 
 def init_windows():
-    cv2.namedWindow(DELTA)
-    cv2.moveWindow(DELTA, 0, 0)
     cv2.namedWindow(DILATE)
-    cv2.moveWindow(DILATE, 400, 0)
+    cv2.moveWindow(DILATE, 0, 0)
     cv2.namedWindow(CONTROL)
     cv2.moveWindow(CONTROL, 800, 0)
 
@@ -176,7 +192,8 @@ def do_setup(cam):
     # start process
     frames = Queue()
     grabber_pr = Process(target=grabber_loop,
-                         args=(frames,
+                         args=(cam.cam_id,
+                               frames,
                                working_f,
                                thresh_min,
                                thresh_max,
@@ -184,13 +201,11 @@ def do_setup(cam):
                                cont_max))
     grabber_pr.start() # todo uncomment
 
-
     while (1):
         while not frames.empty():
-            delta, dilate, with_contours = frames.get_nowait()
+            dilate, with_contours = frames.get_nowait()
 
             cv2.imshow(CONTROL, with_contours)
-            cv2.imshow(DELTA, delta)
             cv2.imshow(DILATE, dilate)
 
         k = cv2.waitKey(1) & 0xFF
