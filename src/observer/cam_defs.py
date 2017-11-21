@@ -29,3 +29,7 @@ CMD_FFMPEG_CONVERT          = "ffmpeg -i {:s}frame_%d.jpg{:s} {:s}" # 1 - full p
                                                                     # 2 - full path to mp4
 
 A_SCALE                     = " -s {:s}x{:s}"                       # 1x2 - wxh
+
+SUFF_NOW                    = "now"
+SUFF_MOVE                   = "move"
+SUFF_TIMELAPSE              = "timelapse"

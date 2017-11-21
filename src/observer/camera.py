@@ -211,8 +211,9 @@ class Camera:
 
         buff.put_nowait(frame)
 
-    def __write_now_frame(self, frame, ts_p):
-        path = os.path.join(self.__path_d, "{:s}_now.jpg".format(ts_p))
+    def __write_frame_to_file(self, frame, ts_p, suffix):
+        path = os.path.join(self.__path_d, "{:s}_{:s}.jpg".format(ts_p,
+                                                                  suffix))
 
         cv2.imwrite(path, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
 
@@ -221,8 +222,8 @@ class Camera:
     def __add_frame_timestamp(self, frame, ts):
         cv2.putText(frame,
                     "{:s}_{:s} {:s}".format(str(self.__c_id),
-                                                   self.__c_name,
-                                                   ts),
+                                            self.__c_name,
+                                            ts),
                     (10, frame.shape[0] - 10),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     LAST_F_SIZE,
@@ -256,6 +257,7 @@ class Camera:
         timestamp = ''
         last_frame = None
         last_frame_p = ''
+        frame_ts = last_frame
 
         # while working_f.value and cam_work:
         while working_f.value and cam_h.isOpened():
@@ -278,7 +280,6 @@ class Camera:
                 ts_fr = timestamp.strftime(cmn.TIMESTAMP_FRAME_STR)
                 ts_p = timestamp.strftime(cmn.TIMESTAMP_PATH_STR)
 
-                frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
 
                 # if recording:
                 #     if rec_f.Value:
@@ -314,16 +315,29 @@ class Camera:
                     #             recording = True
                     #             mv_detected_ts = ts_p
 
-                    last_frame = frame
+                    detected, frame_rs_mv = Camera.__is_differed(last_frame, frame_rs)
+                    frame_ts_mv = self.__add_frame_timestamp(frame_rs_mv, ts_fr)
+
+                    if detected:
+                        file_d_mv = self.__write_frame_to_file(frame_ts_mv, ts_p, SUFF_TIMELAPSE)
+                        out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
+                                                 cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                                       self.__c_name,
+                                                                       ts_fr),
+                                                 file_d_mv,
+                                                 self.__c_name))
+
+                frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
+                last_frame = frame_rs
 
                 cur_wrt_t = time.time()
                 if (time.time() - wrt_t) >= TIMELAPSE_TMT:
                     wrt_t = cur_wrt_t
-                    file_p = self.__write_now_frame(frame_ts, ts_p)
+                    file_p = self.__write_frame_to_file(frame_ts, ts_p, SUFF_TIMELAPSE)
 
                 if now_frame_q.qsize() > 0:
                     while now_frame_q.qsize() > 0:
-                        file_p = self.__write_now_frame(frame_ts, ts_p)
+                        file_p = self.__write_frame_to_file(frame_ts, ts_p, SUFF_NOW)
                         out.put_nowait(cmn.Alert(cmn.T_CAM_NOW_PHOTO,
                                                  cmn.NOW_ALERT.format(str(self.__c_id),
                                                                       self.__c_name,
@@ -336,7 +350,31 @@ class Camera:
                     time.sleep(REC_TMT_SHIFT)
 
         self.state = False
-        # cam_h.release()
+
+    @staticmethod
+    def __is_differed(last, cur):
+        detected_diff = False
+
+        # some prepares
+        frame_last = Camera.__proc_for_detect(last)
+        frame_cur = Camera.__proc_for_detect(cur)
+
+        # get diff
+        delta = cv2.absdiff(frame_last, frame_cur)
+        # 25, 255
+        thresh = cv2.threshold(delta, 5, 255, cv2.THRESH_BINARY)[1]
+        thresh = cv2.dilate(thresh, None, iterations=1)
+        im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        for c in cnts:
+            if cv2.contourArea(c) < 2000 or cv2.contourArea(c) > 30000:
+                continue
+
+            detected_diff = True
+            (x, y, w, h) = cv2.boundingRect(c)
+            cv2.rectangle(frame_cur, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        return detected_diff, frame_cur
 
     def __do_write_proc(self, working_f, rec_f, rec_buf):
         while working_f.value:
@@ -369,8 +407,8 @@ class Camera:
 
         cur_t = time.time()
 
-        last_f_pr = self.__proc_for_detect(last_f)
-        cur_f_pr = self.__proc_for_detect(cur_f)
+        last_f_pr = Camera.__proc_for_detect(last_f)
+        cur_f_pr = Camera.__proc_for_detect(cur_f)
 
         delta = cv2.absdiff(last_f_pr, cur_f_pr)
 
@@ -393,7 +431,8 @@ class Camera:
         print("finish move detect, {:s}".format(str(time.time() - cur_t)))
         cv2.imwrite(os.path.join(os.getcwd(), cmn.LAST_D_P, "post.jpg"), cur_f, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
 
-    def __proc_for_detect(self, frame):
+    @staticmethod
+    def __proc_for_detect(frame):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         frame = cv2.GaussianBlur(frame, (21, 21), 0)
 

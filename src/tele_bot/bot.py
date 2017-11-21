@@ -291,6 +291,17 @@ class TelegramBot(telebot.TeleBot):
 
             if alert.type == common.T_CAM_NOW_PHOTO:
                 self.send_photo(int(alert.who), photo=open(alert.img, 'rb'))
+            elif alert.type == common.T_CAM_MOVE_PHOTO:
+                photo_f = open(alert.img, 'rb')
+
+                logger.error("Alert: {:s} saved photo in {:s}".format(alert.msg,
+                                                                      alert.img))
+                self.send_photo(ADMIN_ID, photo=photo_f)
+
+                for i in range(0, self.__model.get_viewers_len()):
+                    (s_id, s_name) = self.__model.get_viewer_by_i(i)
+                    self.send_photo(s_id, photo=photo_f)
+
             elif alert.type in (common.T_SYS_NOW_INFO, common.T_SYS_ALERT):
                 self.send_message(chat_id=ADMIN_ID, text=alert.msg, parse_mode="markdown")
             elif alert.type == common.T_CAM_SW:
