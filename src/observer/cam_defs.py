@@ -2,7 +2,7 @@ VIDEO_REC_TIME_FULL         = 5
 VIDEO_REC_TIME_PRE          = 1
 
 VIDEO_REC_FPS               = 30
-OBSERVE_FPS                 = 10
+OBSERVE_FPS                 = 1
 
 PRE_REC_BUF_SZ              = VIDEO_REC_TIME_PRE * VIDEO_REC_FPS
 FULL_REC_BUF_SZ             = VIDEO_REC_TIME_FULL * VIDEO_REC_FPS

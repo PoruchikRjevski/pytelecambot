@@ -110,45 +110,6 @@ class Camera:
 
         return img
 
-    def __process_img_rec(self, img):
-        img = self.__decrease_img(img, LO_W, LO_H)
-
-        return img
-
-    def __compare_imgs(self, img_1, img_2):
-        return cv2.subtract(img_1, img_2).any()
-
-    def __write_frame(self, frame):
-        frame = self.__add_timestamp(frame)
-
-        self.__last_frame_p = os.path.join(self.__path_d, "{:s}.jpg".format(self.__time_stamp))
-
-        cv2.imwrite(self.__last_frame_p, frame, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
-
-    def __add_to_buf(self, frame):
-        if not self.__f_rec:
-            if self.__rec_buff.__len__() > self.__pre_rec_buff_sz:
-                self.__rec_buff.pop()
-        else:
-            if not self.__f_wr_mp4:
-                if self.__rec_buff.__len__() >= self.__full_rec_buff_sz:
-                    self.__f_wr_mp4 = True
-                    s_t = time.time()
-                    cp_buf = copy.copy(self.__rec_buff)
-                    # todo detach to other process
-                    # proc = multiprocessing.Process(target=self.__write_mp4())
-                    # proc.start()
-                    self.__write_mp4()
-
-                    s_t = time.time() - s_t
-                    out_log("detach writing videos t: {:s}".format(str(s_t)))
-
-                    return
-            else:
-                return
-
-        self.__rec_buff.append(self.__add_timestamp(frame))
-
     def __free_rec_buff(self, dir_p):
         i_f = 0
         while self.__rec_buff:
@@ -205,12 +166,6 @@ class Camera:
         self.__f_rec = False
         self.__f_wr_mp4 = False
 
-    def __add_frame_to_pre_buf(self, frame, buff):
-        if buff.__len__() >= PRE_REC_BUF_SZ:
-            buff.get_nowait()
-
-        buff.put_nowait(frame)
-
     def __write_frame_to_file(self, frame, ts_p, suffix):
         path = os.path.join(self.__path_d, "{:s}_{:s}.jpg".format(ts_p,
                                                                   suffix))
@@ -245,6 +200,7 @@ class Camera:
         # res_x, res_y = cam_h.set_format(HI_W, HI_H)
         cam_h.set(3, HI_W)
         cam_h.set(4, HI_H)
+        cam_h.set(cv2.CAP_PROP_AUTOFOCUS, 1)
         # cam_work = True
 
         rec_fr_cntr = 0
@@ -283,41 +239,8 @@ class Camera:
                 ts_fr = timestamp.strftime(cmn.TIMESTAMP_FRAME_STR)
                 ts_p = timestamp.strftime(cmn.TIMESTAMP_PATH_STR)
 
-
-                # if recording:
-                #     if rec_f.Value:
-                #         rec_buf.put_nowait(frame_ts)
-                #         rec_fr_cntr += 1
-                #
-                #         if rec_fr_cntr >= FULL_REC_BUF_SZ:
-                #             rec_buf.put_nowait(None)
-                #             rec_buf.put_nowait(mv_detected_ts)
-                #             recording = False
-                    # else:
-                        # self.__add_frame_to_pre_buf(frame_ts, rec_buf)
-
-                # if rec_fr_cntr >= FULL_REC_BUF_SZ:
-                #     rec_buf.put_nowait()
-
                 obs_t_c = cur_t - obs_t
                 if obs_t_c >= OBSERVING_TMT:
-                    obs_t = obs_t_c
-
-                    # todo add selecting area for detect move
-
-                    # if self.__check_moving(frame, last_frame):
-                    #     pass
-                        # rec_f.value = True
-                        # recording = True
-                        # mv_detected_ts = ts_p
-
-                    # if not rec_f.value and not recording:
-                    #     if last_frame is not None:
-                    #         if self.__check_moving(frame, last_frame):
-                    #             rec_f.value = True
-                    #             recording = True
-                    #             mv_detected_ts = ts_p
-
                     detected, frame_rs_mv = Camera.__is_differed(last_frame, frame_rs)
 
                     if detected:
@@ -329,6 +252,8 @@ class Camera:
                                                                        ts_fr),
                                                  file_d_mv,
                                                  self.__c_name))
+
+                    obs_t = obs_t_c
 
                 last_frame = frame_rs
                 frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
@@ -355,32 +280,58 @@ class Camera:
         self.state = False
 
     @staticmethod
-    def __is_differed(last, cur):
-        detected_diff = False
+    def get_thresh(delta, min, max):
+        return cv2.threshold(delta, min, max, cv2.THRESH_BINARY)[1]
 
-        if last is None or cur is None:
-            return False, None
+    @staticmethod
+    def get_dilate(thresh):
+        return cv2.dilate(thresh, None, iterations=1)
 
-        # some prepares
-        frame_last = Camera.__proc_for_detect(last)
-        frame_cur = Camera.__proc_for_detect(cur)
-
-        # get diff
-        delta = cv2.absdiff(frame_last, frame_cur)
-        # 25, 255
-        thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
-        thresh = cv2.dilate(thresh, None, iterations=1)
+    @staticmethod
+    def check_contours(thresh, out, min, max):
+        detected = False
         im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for c in cnts:
-            if cv2.contourArea(c) < 3000:
+            if cv2.contourArea(c) < min or cv2.contourArea(c) > max:
                 continue
 
             detected_diff = True
             (x, y, w, h) = cv2.boundingRect(c)
-            cv2.rectangle(cur, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.rectangle(out, (x, y), (x + w, y + h), (0, 255, 0), 1)
 
-        return detected_diff, cur
+        return detected, out
+
+    @staticmethod
+    def __is_differed(last, cur):
+        if last is None or cur is None:
+            return False, None
+
+        # some prepares
+        frame_last = Camera.proc_for_detect(last, 21, 21)
+        frame_cur = Camera.proc_for_detect(cur, 21, 21)
+
+        # get diff
+        delta = cv2.absdiff(frame_last, frame_cur)
+        # 25, 255
+        # thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
+        thresh = Camera.get_thresh(delta, 25, 255)
+        # thresh = cv2.dilate(thresh, None, iterations=1)
+        thresh = Camera.get_dilate(thresh)
+
+        detected, cur = Camera.check_contours(thresh, cur, 2000, 10000)
+
+        # im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        #
+        # for c in cnts:
+        #     if cv2.contourArea(c) < 3000:
+        #         continue
+        #
+        #     detected_diff = True
+        #     (x, y, w, h) = cv2.boundingRect(c)
+        #     cv2.rectangle(cur, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        return detected, cur
 
     def __do_write_proc(self, working_f, rec_f, rec_buf):
         while working_f.value:
@@ -406,82 +357,12 @@ class Camera:
             else:
                 time.sleep(1)
 
-    def __detect_move_test_proc(self):
-        print("start move detect")
-        last_f = cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_6.jpg"))
-        cur_f = cv2.imread(os.path.join(os.getcwd(), cmn.LAST_D_P, "img_7.jpg"))
-
-        cur_t = time.time()
-
-        last_f_pr = Camera.__proc_for_detect(last_f)
-        cur_f_pr = Camera.__proc_for_detect(cur_f)
-
-        delta = cv2.absdiff(last_f_pr, cur_f_pr)
-
-        # 25, 255
-        thresh = cv2.threshold(delta, 5, 255, cv2.THRESH_BINARY)[1]
-
-        thresh = cv2.dilate(thresh, None, iterations=1)
-
-        im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        # todo need to add setting by admin contours range with callback inline menu
-
-        for c in cnts:
-            if cv2.contourArea(c) < 2000 or cv2.contourArea(c) > 30000:
-                continue
-
-            (x, y, w, h) = cv2.boundingRect(c)
-            cv2.rectangle(cur_f, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-        print("finish move detect, {:s}".format(str(time.time() - cur_t)))
-        cv2.imwrite(os.path.join(os.getcwd(), cmn.LAST_D_P, "post.jpg"), cur_f, [cv2.IMWRITE_JPEG_QUALITY, LAST_F_JPG_Q])
-
     @staticmethod
-    def __proc_for_detect(frame):
+    def proc_for_detect(frame, kw, kh):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        frame = cv2.GaussianBlur(frame, (21, 21), 0)
+        frame = cv2.GaussianBlur(frame, (kw, kh), 0)
 
         return frame
-
-    def __do_work_test(self):
-        once = True
-        obs_t = time.time()
-
-        while self.__work_f:
-            rec_t = time.time()
-            frame = self.__get_test_frame()
-            ret = True
-
-            if ret:
-                cur_t = time.time()
-                self.__time_stamp = datetime.datetime.now().strftime('%y%m%d_%H%M%S')
-
-                frame = self.__process_img(frame)
-
-                # self.__add_to_buf(frame)
-
-                if not self.__f_rec:
-                    if (cur_t - obs_t) >= OBSERVING_TMT:
-                        # if not self.__last_frame is None:
-                        #     if self.__compare_imgs(frame, self.__last_frame):
-                        #         self.__write_move_photo(frame)
-                        #         self.__f_rec = True
-                        #         self.__move_time_stamp = self.__time_stamp
-
-                        # todo detach to other process
-                        self.__write_frame(frame)
-                        self.__last_frame = frame
-                        obs_t = cur_t
-
-
-            rec_t = time.time() - rec_t
-            if rec_t < self.__frame_rec_half_tmt:
-                time.sleep(self.__frame_rec_half_tmt - rec_t)
-            else:
-                print("bad: {:s}".format(str(rec_t)))
-
-        self.state = False
 
     def autostart(self):
         if self.__autostart:
@@ -505,8 +386,7 @@ class Camera:
                                  args=(self.__working_f,
                                        self.__rec_f,
                                        self.__rec_buff_q,))
-        # self.__proc_test = Process(target=self.__detect_move_test_proc)
-        # self.__proc_test.start()
+
         self.__proc_rec.start()
         self.__proc_rx.start()
 
