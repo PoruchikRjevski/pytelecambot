@@ -327,8 +327,8 @@ class Camera:
                                                  file_d_mv,
                                                  self.__c_name))
 
-                frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
                 last_frame = frame_rs
+                frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
 
                 cur_wrt_t = time.time()
                 if (time.time() - wrt_t) >= TIMELAPSE_TMT:
@@ -362,12 +362,12 @@ class Camera:
         # get diff
         delta = cv2.absdiff(frame_last, frame_cur)
         # 25, 255
-        thresh = cv2.threshold(delta, 5, 255, cv2.THRESH_BINARY)[1]
+        thresh = cv2.threshold(delta, 25, 255, cv2.THRESH_BINARY)[1]
         thresh = cv2.dilate(thresh, None, iterations=1)
         im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for c in cnts:
-            if cv2.contourArea(c) < 5000 or cv2.contourArea(c) > 30000:
+            if cv2.contourArea(c) < 3000:
                 continue
 
             detected_diff = True
