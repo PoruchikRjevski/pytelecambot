@@ -323,6 +323,7 @@ class Camera:
 
                 if now_frame_q.qsize() > 0:
                     while now_frame_q.qsize() > 0:
+                        file_p = self.__write_now_frame(frame_ts, ts_p)
                         out.put_nowait(cmn.Alert(cmn.T_CAM_NOW_PHOTO,
                                                  cmn.NOW_ALERT.format(str(self.__c_id),
                                                                       self.__c_name,
