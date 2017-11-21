@@ -3,12 +3,14 @@ import time
 import datetime
 from multiprocessing import Value, Queue, Process
 import logging
+import socket
 
 import common
 from logger import init_logging, log_func_name
 
 __all__ = ['MachineDaemon']
 
+HLDNS_HOST_NAME         = "poruchik_rjevski.hldns.ru"
 
 UPDATE_TMT              = 5
 LOG_TMT                 = 3
@@ -155,6 +157,19 @@ class MachineDaemon:
         return do_alert, msg
 
     @staticmethod
+    def __get_ip_by_hldns():
+        msg = ""
+
+        _, _, ip_addr = socket.gethostname(HLDNS_HOST_NAME)
+
+        if ip_addr:
+            msg = "{:s}\nIP: {:s}\n{:s}".format(common.MID_EDGE,
+                                                str(ip_addr),
+                                                common.MID_EDGE)
+
+        return False, msg
+
+    @staticmethod
     def __update_system_status_info(do_alert):
         time_stamp = datetime.datetime.now().strftime(common.TIMESTAMP_FRAME_STR)
 
@@ -176,6 +191,10 @@ class MachineDaemon:
         bat_alert, bat_msg = MachineDaemon.__get_battery_info()
         msg = "{:s}\n{:s}".format(msg,
                                   bat_msg)
+
+        _, ip_msg = MachineDaemon.__get_ip_by_hldns()
+        msg = "{:s}\n{:s}".format(msg,
+                                  ip_msg)
 
         msg = "{:s}\n{:s}".format(msg,
                                   common.BIG_EDGE)
