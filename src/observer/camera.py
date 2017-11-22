@@ -191,6 +191,8 @@ class Camera:
         mv_detected_ts = None
         recorded_main_frame = FULL_REC_BUF_SZ
 
+        detected_in_last_part = False
+
         rec_t = time.time()
         obs_t = rec_t
         wrt_t = rec_t
@@ -230,18 +232,17 @@ class Camera:
                 frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
 
                 obs_t_c = cur_t - obs_t
-                if obs_t_c >= OBSERVING_TMT and recorded_main_frame >= FULL_REC_BUF_SZ:
+                if obs_t_c >= OBSERVING_TMT:
                     # det_t = time.time()
                     detected, frame_rs_mv = self.__is_differed(last_frame, frame_rs)
                     # det_t = time.time() - det_t
                     # print("detect t: {:f}".format(det_t))
 
                     if detected:
-                        recording = True
-                        recorded_small = 0
-                        recorded_main_frame = 0
+                        detected_in_last_part = detected
 
-                        if out_small is None:
+                    if not recording:
+                        if detected:
                             frame_ts_mv = self.__add_frame_timestamp(frame_rs_mv, ts_fr)
                             file_d_mv = self.__write_frame_to_file(frame_ts_mv, ts_p, SUFF_MOVE)
                             out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
@@ -267,13 +268,19 @@ class Camera:
 
                             while pre_buf_big:
                                 out_big.write(pre_buf_big.popleft())
-                    else:
-                        recorded_main_frame = FULL_REC_BUF_SZ
 
-                        if out_small is not None:
-                            recording = False
+                            recorded_main_frame = 0
+                            recording = True
+
+                    obs_t = obs_t_c
+
+                if recording:
+                    if recorded_main_frame >= FULL_REC_BUF_SZ:
+                        if not detected_in_last_part:
                             out_small.release()
                             out_small = None
+                            out_big.release()
+                            out_big = None
                             out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_MP4,
                                                      cmn.MOVE_ALERT.format(str(self.__c_id),
                                                                            self.__c_name,
@@ -281,23 +288,25 @@ class Camera:
                                                      file_d_mv_small,
                                                      self.__c_name))
 
-                            out_big.release()
-                            out_big = None
+                            recording = False
 
-                    obs_t = obs_t_c
+                        recorded_main_frame = 0
+                    else:
+                        small_rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
+                        big_rec_frame = self.__resize_frame(frame_ts, HI_W, HI_H)
 
-                if recording:
-                    small_rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
-                    big_rec_frame = self.__resize_frame(frame_ts, HI_W, HI_H)
-                    out_small.write(small_rec_frame)
-                    out_big.write(big_rec_frame)
-                    recorded_main_frame += 1
+                        out_small.write(small_rec_frame)
+                        out_big.write(big_rec_frame)
+
+                        recorded_main_frame += 1
                 else:
                     small_rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
                     big_rec_frame = self.__resize_frame(frame_ts, HI_W, HI_H)
+
                     if len(pre_buf_small) >= PRE_REC_BUF_SZ:
                         pre_buf_small.popleft()
                         pre_buf_big.popleft()
+
                     pre_buf_small.append(small_rec_frame)
                     pre_buf_big.append(big_rec_frame)
 
