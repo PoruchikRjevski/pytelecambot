@@ -168,6 +168,7 @@ class Camera:
         cam_h.set(3, HI_W)
         cam_h.set(4, HI_H)
         # cam_h.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+        cam_h.set(cv2.CAP_PROP_FPS, 30)
         print("CAM {:s} FPS {:s}".format(str(self.__c_id),
                                          str(cam_h.get(cv2.CAP_PROP_FPS))))
 
@@ -248,8 +249,7 @@ class Camera:
                             frame_ts_mv = self.__add_frame_timestamp(frame_rs_mv, ts_fr)
                             file_d_mv = self.__write_frame_to_file(frame_ts_mv, ts_p, SUFF_MOVE)
                             ts_frame_detect = ts_fr
-
-                        detected_in_last_part = detected
+                            detected_in_last_part = detected
 
                     if not recording:
                         if detected:
@@ -282,6 +282,8 @@ class Camera:
                             recording = True
 
                     obs_t = obs_t_c
+
+                last_frame = frame_rs
 
                 if recording:
                     if recorded_main_frame >= FULL_REC_BUF_SZ:
@@ -345,8 +347,6 @@ class Camera:
 
                     pre_buf_small.append(small_rec_frame)
                     pre_buf_big.append(big_rec_frame)
-
-                last_frame = frame_rs
 
                 cur_wrt_t = time.time() - wrt_t
                 if cur_wrt_t >= TIMELAPSE_TMT:
