@@ -343,7 +343,7 @@ class Camera:
 
     @staticmethod
     def process_denoise(frame):
-        return cv2.fastNlMeansDenoisingColored(img, None, 10, 10, 7, 21)
+        return cv2.fastNlMeansDenoisingColored(frame, None, 10, 10, 7, 21)
 
     @staticmethod
     def process_for_detect(frame, kw, kh):
