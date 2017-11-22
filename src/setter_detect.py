@@ -78,7 +78,7 @@ def grabber_loop(cam_id, frames, working, t_min, t_max, c_min, c_max):
 
                 delta = cv2.absdiff(frame_last, frame_cur)
 
-                thresh = Camera.get_thresh(delta, t_min.value, t_max.value)
+                thresh = Camera.accept_threshold(delta, t_min.value, t_max.value)
 
                 dilate = Camera.get_dilate(thresh)
 

@@ -138,7 +138,6 @@ class UserModel:
         return True if self.__alerts.qsize() > 0 else False
 
     def get_alert(self):
-        # return self.__alerts.popleft()
         return self.__alerts.get_nowait()
 
     def get_now_photo(self, t_i, who):
