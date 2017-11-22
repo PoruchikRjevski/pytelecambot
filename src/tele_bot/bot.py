@@ -295,22 +295,22 @@ class TelegramBot(telebot.TeleBot):
                 logger.info("Alert: {:s} saved photo in {:s}".format(alert.msg,
                                                                      alert.img))
                 self.send_message(chat_id=ADMIN_ID, text="MOVE photo:\n{:s}".format(alert.msg))
-                self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
+                self.send_photo(chat_id=ADMIN_ID, photo=open(alert.img, 'rb'))
 
                 for i in range(0, self.__model.get_viewers_len()):
                     (s_id, s_name) = self.__model.get_viewer_by_i(i)
-                    self.send_message(chat_id=ADMIN_ID, text="MOVE photo:\n{:s}".format(alert.msg))
-                    self.send_photo(s_id, photo=open(alert.img, 'rb'))
+                    self.send_message(chat_id=s_id, text="MOVE photo:\n{:s}".format(alert.msg))
+                    self.send_photo(chat_id=s_id, photo=open(alert.img, 'rb'))
             elif alert.type == common.T_CAM_MOVE_MP4:
                 logger.info("Alert: {:s} saved video in {:s}".format(alert.msg,
                                                                      alert.img))
                 self.send_message(chat_id=ADMIN_ID, text="MOVE video:\n{:s}".format(alert.msg))
-                self.send_video(ADMIN_ID, data=open(alert.img, 'rb'))
+                self.send_video(chat_id=ADMIN_ID, data=open(alert.img, 'rb'))
 
                 for i in range(0, self.__model.get_viewers_len()):
                     (s_id, s_name) = self.__model.get_viewer_by_i(i)
                     self.send_message(chat_id=s_id, text="MOVE video:\n{:s}".format(alert.msg))
-                    self.send_video(s_id, data=open(alert.img, 'rb'))
+                    self.send_video(chat_id=s_id, data=open(alert.img, 'rb'))
             elif alert.type in (common.T_SYS_NOW_INFO, common.T_SYS_ALERT):
                 self.send_message(chat_id=ADMIN_ID, text=alert.msg, parse_mode="markdown")
             elif alert.type == common.T_CAM_SW:

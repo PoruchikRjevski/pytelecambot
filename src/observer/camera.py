@@ -207,6 +207,8 @@ class Camera:
         file_d_mv_small = ""
         file_d_mv_big = ""
         frame_ts_mv = ""
+        ts_frame_small = ""
+        ts_frame_detect = ""
         file_d_mv = ""
 
         # while working_f.value and cam_work:
@@ -227,7 +229,7 @@ class Camera:
                     continue
 
                 # process frame
-                frame_rs = self.__resize_frame(frame, LO_W, LO_H)
+                frame_rs = self.__resize_frame(frame, HI_W, HI_H)
 
                 timestamp = datetime.datetime.now()
                 ts_fr = timestamp.strftime(cmn.TIMESTAMP_FRAME_STR)
@@ -245,15 +247,17 @@ class Camera:
                         if not detected_in_last_part:
                             frame_ts_mv = self.__add_frame_timestamp(frame_rs_mv, ts_fr)
                             file_d_mv = self.__write_frame_to_file(frame_ts_mv, ts_p, SUFF_MOVE)
+                            ts_frame_detect = ts_fr
 
                         detected_in_last_part = detected
 
                     if not recording:
                         if detected:
+                            ts_frame_small = ts_frame_detect
                             out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
                                                      cmn.MOVE_ALERT.format(str(self.__c_id),
                                                                            self.__c_name,
-                                                                           ts_fr),
+                                                                           ts_frame_small),
                                                      file_d_mv,
                                                      self.__c_name))
 
@@ -277,7 +281,6 @@ class Camera:
                             recorded_main_frame = 0
                             recording = True
 
-
                     obs_t = obs_t_c
 
                 if recording:
@@ -290,16 +293,23 @@ class Camera:
                             out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_MP4,
                                                      cmn.MOVE_ALERT.format(str(self.__c_id),
                                                                            self.__c_name,
-                                                                           ts_fr),
+                                                                           ts_frame_small),
                                                      file_d_mv_small,
                                                      self.__c_name))
 
                             recording = False
                         else:
-                            detected_in_last_part = False
-
-                            if recorded_file_frame < MAX_SIZE_OF_FILE:
+                            if recorded_file_frame >= MAX_SIZE_OF_FILE:
                                 recording = True
+
+                                out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_MP4,
+                                                         cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                                               self.__c_name,
+                                                                               ts_frame_small),
+                                                         file_d_mv_small,
+                                                         self.__c_name))
+
+                                ts_frame_small = ts_frame_detect
 
                                 file_d_mv_small = file_d_mv.replace(".jpg", "_small.mp4")
                                 out_small.release()
@@ -315,6 +325,7 @@ class Camera:
                                                           (HI_W, HI_H))
 
                         recorded_main_frame = 0
+                        detected_in_last_part = False
                     else:
                         small_rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
                         big_rec_frame = self.__resize_frame(frame_ts, HI_W, HI_H)
