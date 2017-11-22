@@ -9,6 +9,9 @@ PREVIEW_FPS_PASS            = 5
 PRE_REC_BUF_SZ              = VIDEO_REC_TIME_PRE * VIDEO_REC_FPS
 FULL_REC_BUF_SZ             = VIDEO_REC_TIME_FULL * VIDEO_REC_FPS
 
+
+MAX_SIZE_OF_FILE            = 60 * VIDEO_REC_FPS
+
 REC_TMT                     = 1 / VIDEO_REC_FPS
 REC_TMT_SHIFT               = REC_TMT / 2
 OBSERVING_TMT               = 1 / OBSERVE_FPS

@@ -190,6 +190,7 @@ class Camera:
         recorded_small = 0
         mv_detected_ts = None
         recorded_main_frame = FULL_REC_BUF_SZ
+        recorded_file_frame = 0
 
         detected_in_last_part = False
 
@@ -205,6 +206,8 @@ class Camera:
         frame_ts = last_frame
         file_d_mv_small = ""
         file_d_mv_big = ""
+        frame_ts_mv = ""
+        file_d_mv = ""
 
         # while working_f.value and cam_work:
         while working_f.value and cam_h.isOpened():
@@ -239,12 +242,14 @@ class Camera:
                     # print("detect t: {:f}".format(det_t))
 
                     if detected:
+                        if not detected_in_last_part:
+                            frame_ts_mv = self.__add_frame_timestamp(frame_rs_mv, ts_fr)
+                            file_d_mv = self.__write_frame_to_file(frame_ts_mv, ts_p, SUFF_MOVE)
+
                         detected_in_last_part = detected
 
                     if not recording:
                         if detected:
-                            frame_ts_mv = self.__add_frame_timestamp(frame_rs_mv, ts_fr)
-                            file_d_mv = self.__write_frame_to_file(frame_ts_mv, ts_p, SUFF_MOVE)
                             out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
                                                      cmn.MOVE_ALERT.format(str(self.__c_id),
                                                                            self.__c_name,
@@ -272,6 +277,7 @@ class Camera:
                             recorded_main_frame = 0
                             recording = True
 
+
                     obs_t = obs_t_c
 
                 if recording:
@@ -289,6 +295,24 @@ class Camera:
                                                      self.__c_name))
 
                             recording = False
+                        else:
+                            detected_in_last_part = False
+
+                            if recorded_file_frame < MAX_SIZE_OF_FILE:
+                                recording = True
+
+                                file_d_mv_small = file_d_mv.replace(".jpg", "_small.mp4")
+                                out_small.release()
+                                out_small = cv2.VideoWriter(file_d_mv_small,
+                                                            cv2.VideoWriter_fourcc(*'H264'),
+                                                            VIDEO_REC_FPS,
+                                                            (PREV_W, PREV_H))
+                                file_d_mv_big = file_d_mv.replace(".jpg", "_big.mp4")
+                                out_big.release()
+                                out_big = cv2.VideoWriter(file_d_mv_big,
+                                                          cv2.VideoWriter_fourcc(*'H264'),
+                                                          VIDEO_REC_FPS,
+                                                          (HI_W, HI_H))
 
                         recorded_main_frame = 0
                     else:
@@ -299,6 +323,7 @@ class Camera:
                         out_big.write(big_rec_frame)
 
                         recorded_main_frame += 1
+                        recorded_file_frame += 1
                 else:
                     small_rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
                     big_rec_frame = self.__resize_frame(frame_ts, HI_W, HI_H)
