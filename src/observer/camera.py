@@ -232,7 +232,7 @@ class Camera:
                 obs_t_c = cur_t - obs_t
                 if obs_t_c >= OBSERVING_TMT and recorded_main_frame >= FULL_REC_BUF_SZ:
                     # det_t = time.time()
-                    detected, frame_rs_mv = Camera.__is_differed(last_frame, frame_rs)
+                    detected, frame_rs_mv = self.__is_differed(last_frame, frame_rs)
                     # det_t = time.time() - det_t
                     # print("detect t: {:f}".format(det_t))
 
@@ -342,7 +342,7 @@ class Camera:
         self.state = False
 
     @staticmethod
-    def proc_for_detect(frame, kw, kh):
+    def process_for_detect(frame, kw, kh):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         frame = cv2.GaussianBlur(frame, (kw, kh), 0)
 
@@ -389,22 +389,21 @@ class Camera:
 
         return detected, out
 
-    @staticmethod
-    def __is_differed(last, cur):
+    def __is_differed(self, last, cur):
         if last is None or cur is None:
             return False, None
 
         # some prepares
-        frame_last = Camera.proc_for_detect(last, 21, 21)
-        frame_cur = Camera.proc_for_detect(cur, 21, 21)
+        frame_last = Camera.process_for_detect(last, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
+        frame_cur = Camera.process_for_detect(cur, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
 
         # get diff
         delta = cv2.absdiff(frame_last, frame_cur)
-        thresh = Camera.accept_threshold(delta, 25, 255)
+        thresh = Camera.accept_threshold(delta, self.__thresh_min, self.__thresh_max)
         thresh = Camera.get_dilate(thresh)
 
         # draw contours
-        detected, cur = Camera.check_contours(thresh, cur, 2000, 40000)
+        detected, cur = Camera.check_contours(thresh, cur, self.__contours_min, self.__contours_max)
 
         return detected, cur
 

@@ -1,5 +1,5 @@
-VIDEO_REC_TIME_FULL         = 2
-VIDEO_REC_TIME_PRE          = 2
+VIDEO_REC_TIME_FULL         = 4
+VIDEO_REC_TIME_PRE          = 1
 
 VIDEO_REC_FPS               = 30
 OBSERVE_FPS                 = 1

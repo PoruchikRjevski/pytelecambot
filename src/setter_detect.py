@@ -29,6 +29,8 @@ THRESH_MAX = "Thr max"
 CONT_MIN = "Cntr min"
 CONT_MAX = "Cntr max"
 
+FOCUS_TB = "Focus"
+
 thresh_min = Value("i", 25)
 thresh_max = Value("i", 255)
 
@@ -38,18 +40,15 @@ cont_max = Value("i", 30000)
 working_f = Value("i", 1)
 working_f.value = True
 
+focus_v = Value("i", 0)
+
 
 HEIGHT = 480
 WIDTH = 640
 
 
-def grabber_loop(cam_id, frames, working, t_min, t_max, c_min, c_max):
-    # init cam blabla
-    # cur_d = os.getcwd()
-    # last = cv2.imread("/home/kozlov_vn/Projects/img_0.jpg")
-    # last = cv2.resize(last, (WIDTH, HEIGHT))
-    # cur = cv2.imread("/home/kozlov_vn/Projects/img_1.jpg")
-    # cur = cv2.resize(cur, (WIDTH, HEIGHT))
+def grabber_loop(cam_id, frames, working, t_min, t_max, c_min, c_max, focus):
+    saved_focus = -1
 
     cam_h = cv2.VideoCapture(int(cam_id))
 
@@ -57,6 +56,9 @@ def grabber_loop(cam_id, frames, working, t_min, t_max, c_min, c_max):
     last_f = None
 
     while working.value and cam_h.isOpened():
+        if focus.value != saved_focus:
+            saved_focus = focus.value
+            cam_h.set(cv2.CAP_PROP_FOCUS, saved_focus/100)
 
         cur_t = time.time()
         # check_t = cur_t
@@ -73,8 +75,8 @@ def grabber_loop(cam_id, frames, working, t_min, t_max, c_min, c_max):
             cur = cv2.resize(frame, (WIDTH, HEIGHT))
 
             if last_f is not None:
-                frame_last = Camera.proc_for_detect(last_f, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
-                frame_cur = Camera.proc_for_detect(cur, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
+                frame_last = Camera.process_for_detect(last_f, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
+                frame_cur = Camera.process_for_detect(cur, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
 
                 delta = cv2.absdiff(frame_last, frame_cur)
 
@@ -121,6 +123,11 @@ def change_cont_max(x):
         cv2.setTrackbarPos(CONT_MAX, CONTROL, cont_max.value)
 
 
+def change_focus_v(x):
+    if x != focus_v.value:
+        focus_v.value = x
+
+
 def init_windows():
     cv2.namedWindow(DILATE)
     cv2.moveWindow(DILATE, 0, 0)
@@ -148,6 +155,11 @@ def init_trackbars():
     cv2.setTrackbarMin(CONT_MAX, CONTROL, 0)
     cv2.setTrackbarMax(CONT_MAX, CONTROL, 50000)
     cv2.setTrackbarPos(CONT_MAX, CONTROL, cont_max.value)
+
+    cv2.createTrackbar(FOCUS_TB, CONTROL, 0, 100, change_focus_v)
+    cv2.setTrackbarMin(FOCUS_TB, CONTROL, 0)
+    cv2.setTrackbarMax(FOCUS_TB, CONTROL, 100)
+    cv2.setTrackbarPos(FOCUS_TB, CONTROL, focus_v.value)
 
 
 def init_parameters(cam):
@@ -198,7 +210,8 @@ def do_setup(cam):
                                thresh_min,
                                thresh_max,
                                cont_min,
-                               cont_max))
+                               cont_max,
+                               focus_v))
     grabber_pr.start() # todo uncomment
 
     while (1):
