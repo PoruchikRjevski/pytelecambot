@@ -254,10 +254,10 @@ class Camera:
 
             if rec_t_c >= REC_TMT:
                 rec_t = rec_t_c
-                get_f_t = time.time()
+                # get_f_t = time.time()
                 ret, frame = cam_h.read()
-                get_f_t = time.time() - get_f_t
-                print("get frame t: {:f}".format(get_f_t))
+                # get_f_t = time.time() - get_f_t
+                # print("get frame t: {:f}".format(get_f_t))
 
                 if not ret:
                     time.sleep(REC_TMT_SHIFT)
@@ -273,10 +273,10 @@ class Camera:
 
                 obs_t_c = cur_t - obs_t
                 if obs_t_c >= OBSERVING_TMT and recorded_main_frame >= FULL_REC_BUF_SZ:
-                    det_t = time.time()
+                    # det_t = time.time()
                     detected, frame_rs_mv = Camera.__is_differed(last_frame, frame_rs)
-                    det_t = time.time() - det_t
-                    print("detect t: {:f}".format(det_t))
+                    # det_t = time.time() - det_t
+                    # print("detect t: {:f}".format(det_t))
 
                     if detected:
                         recording = True
@@ -355,8 +355,8 @@ class Camera:
                 if rec_t_c <= REC_TMT_SHIFT:
                     time.sleep(REC_TMT_SHIFT)
 
-            loop_t = time.time() - cur_t
-            print("loop t: {:f}".format(loop_t))
+            # loop_t = time.time() - cur_t
+            # print("loop t: {:f}".format(loop_t))
 
         self.state = False
 
