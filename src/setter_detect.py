@@ -75,10 +75,10 @@ def grabber_loop(cam_id, frames, working, t_min, t_max, c_min, c_max, focus):
             cur = cv2.resize(frame, (WIDTH, HEIGHT))
 
             if last_f is not None:
+                # frame_last = Camera.process_denoise(last_f)
                 frame_last = Camera.process_for_detect(last_f, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
-                # frame_last = Camera.process_denoise(frame_last)
+                # frame_cur = Camera.process_denoise(cur)
                 frame_cur = Camera.process_for_detect(cur, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
-                # frame_cur = Camera.process_denoise(frame_cur)
 
                 delta = cv2.absdiff(frame_last, frame_cur)
 
