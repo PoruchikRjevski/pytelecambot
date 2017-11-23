@@ -207,7 +207,7 @@ class Camera:
     def __open_videowriter(self, file_mv_path, fps, timestamp, suffix):
         path = file_mv_path.replace(".jpg", "_{:s}.mp4".format(suffix))
         handler = cv2.VideoWriter(path,
-                                  cv2.VideoWriter_fourcc(*'XVID'),
+                                  cv2.VideoWriter_fourcc(*'MJPG'),
                                   fps,
                                   (PREV_W, PREV_H))
 
