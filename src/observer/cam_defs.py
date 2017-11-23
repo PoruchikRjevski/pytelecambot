@@ -1,4 +1,4 @@
-VIDEO_REC_TIME_FULL         = 4
+VIDEO_REC_TIME_FULL         = 5
 VIDEO_REC_TIME_PRE          = 1
 
 VIDEO_REC_FPS               = 30
@@ -50,3 +50,5 @@ SUFF_TIMELAPSE              = "timelapse"
 
 SUFF_PREV                   = "preview"
 SUFF_FULL                   = "full"
+
+MJPG_CODEC                  = 1196444237.0

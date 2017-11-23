@@ -51,6 +51,14 @@ def grabber_loop(cam_id, frames, working, t_min, t_max, c_min, c_max, focus):
     saved_focus = -1
 
     cam_h = cv2.VideoCapture(int(cam_id))
+    # cam_h.set(cv2.CAP_PROP_ZOOM, 0)
+    cam_h.set(cv2.CAP_PROP_FOURCC, MJPG_CODEC)
+    cam_h.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cam_h.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    # cam_h.set(cv2.CAP_PROP_FPS, 30.0)
+    print("FPS {:s}".format(str(cam_h.get(cv2.CAP_PROP_FPS))))
+    print("H {:s}".format(str(cam_h.get(cv2.CAP_PROP_FRAME_HEIGHT))))
+    print("W {:s}".format(str(cam_h.get(cv2.CAP_PROP_FRAME_WIDTH))))
 
     rec_t = time.time()
     last_f = None
@@ -73,6 +81,7 @@ def grabber_loop(cam_id, frames, working, t_min, t_max, c_min, c_max, focus):
                 continue
 
             cur = cv2.resize(frame, (WIDTH, HEIGHT))
+            # cur = Camera.mirroring_img(frame)
 
             if last_f is not None:
                 # frame_last = Camera.process_denoise(last_f)
