@@ -364,6 +364,7 @@ class Camera:
                     if recording:
                         preview_handler.write(preview_rec_frame)
                         part_frames += 1
+                        file_frames += 1
                     else:
                         if len(pre_buffer) >= max_pre_buffer_size:
                             pre_buffer.popleft()
