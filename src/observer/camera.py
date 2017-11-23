@@ -627,8 +627,8 @@ class Camera:
         return frame
 
     @staticmethod
-    def accept_threshold(delta, min, max):
-        return cv2.threshold(delta, min, max, cv2.THRESH_BINARY)[1]
+    def accept_threshold(delta, t_min, t_max):
+        return cv2.threshold(delta, t_min, t_max, cv2.THRESH_BINARY)[1]
 
     @staticmethod
     def get_dilate(thresh):
@@ -639,7 +639,7 @@ class Camera:
         detected = False
         im, cnts, hir = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        true_cont = [c for c in cnts if cv2.contourArea(c) < c_min or cv2.contourArea(c) > c_max]
+        true_cont = [c for c in cnts if c_min <= cv2.contourArea(c) <= c_max]
 
         if len(true_cont) > 0:
             detected = True
@@ -672,8 +672,8 @@ class Camera:
             return False, None
 
         # some prepares
-        frame_last = Camera.process_for_detect(last, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
-        frame_cur = Camera.process_for_detect(cur, GAUSS_BLUR_KERN_SIZE, GAUSS_BLUR_KERN_SIZE)
+        frame_last = Camera.process_for_detect(last, DEF_GAUSS_BLUR_KERN_SIZE, DEF_GAUSS_BLUR_KERN_SIZE)
+        frame_cur = Camera.process_for_detect(cur, DEF_GAUSS_BLUR_KERN_SIZE, DEF_GAUSS_BLUR_KERN_SIZE)
 
         # get diff
         delta = cv2.absdiff(frame_last, frame_cur)

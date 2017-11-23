@@ -17,7 +17,12 @@ OBSERVING_TMT               = 1 / OBSERVE_FPS
 
 TIMELAPSE_TMT               = 10
 
-GAUSS_BLUR_KERN_SIZE        = 21
+DEF_GAUSS_BLUR_KERN_SIZE    = 21
+DEF_THRESHOLD_MIN           = 25
+DEF_THRESHOLD_MAX           = 255
+DEF_CONTOURS_MIN            = 2000
+DEF_CONTOURS_MAX            = 40000
+
 
 HI_W                        = 1280
 HI_H                        = 720
