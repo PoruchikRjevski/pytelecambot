@@ -171,7 +171,7 @@ class MachineDaemon:
 
     @staticmethod
     def __update_system_status_info(do_alert):
-        time_stamp = datetime.datetime.now().strftime(common.TIMESTAMP_FRAME_STR)
+        time_stamp = datetime.datetime.now().strftime(common.TIMESTAMP_FRAME_TEMPLATE)
 
         load_alert, load_msg = MachineDaemon.__get_loads()
         msg = "{:s}\nSystem status:\n{:s}\n{:s}\n{:s}".format(common.BIG_EDGE,

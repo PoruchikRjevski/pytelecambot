@@ -21,7 +21,7 @@ from time_checker import *
 from machine_daemon import *
 from logger import init_logging, log_func_name
 import global_vars as g_v
-import setter_detect
+import cam_tester
 
 
 logger = logging.getLogger("{:s}.main".format(common.SOLUTION))
@@ -144,7 +144,7 @@ def try_setup_cam(id):
     cameras_list = load_config(cfg_loader)
 
     if id < len(cameras_list):
-        if setter_detect.do_setup(cameras_list[id]):
+        if cam_tester.do_setup(cameras_list[id]):
             cameras_path = os.path.join(g_v.PROJECT_PATH, common.CONFIG_DIR_PATH, common.CAMERAS_FILE)
             cfg_loader.save_cameras(cameras_list, cameras_path)
     else:

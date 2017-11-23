@@ -6,9 +6,8 @@ OBSERVE_FPS                 = 1
 
 PREVIEW_FPS_PASS            = 5
 
-PRE_REC_BUF_SZ              = VIDEO_REC_TIME_PRE * VIDEO_REC_FPS
-FULL_REC_BUF_SZ             = VIDEO_REC_TIME_FULL * VIDEO_REC_FPS
-
+MAX_PRE_BUFFER_SIZE         = VIDEO_REC_TIME_PRE * VIDEO_REC_FPS
+MAX_FULL_BUFFER_SIZE        = VIDEO_REC_TIME_FULL * VIDEO_REC_FPS
 
 MAX_SIZE_OF_FILE            = 30 * VIDEO_REC_FPS
 
@@ -29,7 +28,7 @@ LO_H                        = 480
 PREV_W                      = 480
 PREV_H                      = 320
 
-LAST_F_SIZE                 = 0.5
+LAST_F_SIZE                 = 1
 LAST_F_TXT_POS              = (15, 15)
 LAST_F_TXT_CLR              = (0, 0, 255)
 

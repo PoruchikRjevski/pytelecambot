@@ -290,7 +290,11 @@ class TelegramBot(telebot.TeleBot):
             alert = self.__model.get_alert()
 
             if alert.type == common.T_CAM_NOW_PHOTO:
-                self.send_photo(int(alert.who), photo=open(alert.img, 'rb'))
+                if isinstance(alert.who, list):
+                    for who in alert.who:
+                        self.send_photo(chat_id=int(who), photo=open(alert.img, 'rb'))
+                else:
+                    self.send_photo(chat_id=int(alert.who), photo=open(alert.img, 'rb'))
             elif alert.type == common.T_CAM_MOVE_PHOTO:
                 logger.info("Alert: {:s} saved photo in {:s}".format(alert.msg,
                                                                      alert.img))

@@ -52,6 +52,8 @@ CAM_MD_STOPPED              = "{:s} Детектирование выключе�
 MOVE_ALERT                  = "Камера: {:s}_{:s}\nДвижение в {:s}!"
 NOW_ALERT                   = "Камера: {:s}_{:s}\nФото в {:s}!"
 
+TIMESTAMP_FRAME_TEMPLATE    = '%d %B %y %H:%M:%S'
+TIMESTAMP_PATH_TEMPLATE     = '%d%m%y_%H%M%S'
 
 # COMMON FUNCS
 def reset_app():
@@ -98,8 +100,6 @@ INI_PATH        = "../misc/main.ini"
 # cameras config path
 CAMS_F_PATH        = "../misc/cameras.ini"
 
-TIMESTAMP_FRAME_STR         = '%d %B %y %H:%M:%S'
-TIMESTAMP_PATH_STR          = '%d%m%y_%H%M%S'
 
 # alert types
 

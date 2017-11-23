@@ -154,11 +154,11 @@ class Camera:
                     "{:s}_{:s} {:s}".format(str(self.__c_id),
                                             self.__c_name,
                                             ts),
-                    (12, frame.shape[0] - 10),
+                    (10, frame.shape[0] - 10),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     LAST_F_SIZE,
                     LAST_F_TXT_CLR,
-                    1)
+                    cv2.LINE_AA)
 
         return frame
 
@@ -167,17 +167,203 @@ class Camera:
         # res_x, res_y = cam_h.set_format(HI_W, HI_H)
         cam_h.set(3, HI_W)
         cam_h.set(4, HI_H)
-        # cam_h.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-        cam_h.set(cv2.CAP_PROP_FPS, 30)
+        # cam_h.set(cv2.CAP_PROP_FPS, 30)
+        fps = cam_h.get(cv2.CAP_PROP_FPS)
         print("CAM {:s} FPS {:s}".format(str(self.__c_id),
-                                         str(cam_h.get(cv2.CAP_PROP_FPS))))
+                                         str(fps)))
 
-        return cam_h
+        return cam_h, fps
 
     def __deinit_cam(self, cam):
         cam.release()
 
+    @staticmethod
+    def __get_current_timestamps():
+        current_time = datetime.datetime.now()
+        frame_ts = current_time.strftime(cmn.TIMESTAMP_FRAME_TEMPLATE)
+        path_ts = current_time.strftime(cmn.TIMESTAMP_PATH_TEMPLATE)
+
+        return frame_ts, path_ts
+
+    def __send_now_photo(self, now_frame_q, out, ts_frame, ts_path, frame_ts):
+        now_file_path = self.__write_frame_to_file(frame_ts, ts_path, SUFF_NOW)
+
+        who_ask_list = []
+        while not now_frame_q.empty():
+            who_ask_list.append(str(now_frame_q.get_nowait()))
+
+        if who_ask_list:
+            out.put_nowait(cmn.Alert(cmn.T_CAM_NOW_PHOTO,
+                                     cmn.NOW_ALERT.format(str(self.__c_id),
+                                                          self.__c_name,
+                                                          ts_frame),
+                                     now_file_path,
+                                     self.__c_name,
+                                     who_ask_list))
+
+    def __open_videowriter(self, file_mv_path, fps, timestamp):
+        path = file_mv_path.replace(".jpg", "_big.mp4")
+        handler = cv2.VideoWriter(path,
+                                  cv2.VideoWriter_fourcc(*'H264'),
+                                  fps,
+                                  (PREV_W, PREV_H))
+
+        return handler, path, timestamp
+
+    def __close_videowriter(self, handler, path, out, timestamp):
+        handler.release()
+        handler = None
+        out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_MP4,
+                                 cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                       self.__c_name,
+                                                       timestamp),
+                                 path,
+                                 self.__c_name))
+
     def __do_work_proc(self, working_f, md_f, now_frame_q, out):
+        cam, fps = self.__init_cam()
+
+        real_timeout = 1/fps
+        observing_timeout = 2/fps
+        max_pre_buffer_size = VIDEO_REC_TIME_PRE * fps
+        max_full_buffer_size = VIDEO_REC_TIME_FULL * fps
+        max_size_of_file = 30 * fps
+
+        t_rec = time.time()
+        t_timelapse = t_rec
+        t_detect = t_rec
+
+        ts_frame = ""
+        ts_path = ""
+
+        last_frame = None
+
+        preview_handler = None
+        preview_path = ""
+        preview_ts = ""
+        pre_buffer = queue.deque()
+
+        recording = False
+        part_frames = 0
+        file_frames = 0
+        detected_in_last_part = False
+        dilp_path = ""
+        dilp_ts = ""
+
+        while working_f.value and cam.isOpened():
+            t_start_loop = time.time()
+
+            t_rec_temp = t_start_loop - t_rec
+            if t_rec_temp >= real_timeout:
+                t_rec = t_rec_temp
+
+                ret, frame = cam.read()
+
+                ts_frame, ts_path = Camera.__get_current_timestamps()
+                frame_ts = self.__add_frame_timestamp(frame, ts_frame)
+
+                if not ret:
+                    time.sleep(REC_TMT_SHIFT)
+                    continue
+
+                # move detection
+                if md_f.value:
+                    t_detec_temp = t_start_loop - t_detect
+                    if t_detec_temp >= observing_timeout:
+                        t_detect = t_detec_temp
+
+                        detected, frame_mv = self.__is_differed(last_frame, frame)
+
+                        if detected:
+                            frame_mv_ts = self.__add_frame_timestamp(frame_mv, ts_frame)
+                            file_mv_path = self.__write_frame_to_file(frame_mv_ts, ts_path, SUFF_MOVE)
+
+                            if not recording:
+                                out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_PHOTO,
+                                                         cmn.MOVE_ALERT.format(str(self.__c_id),
+                                                                               self.__c_name,
+                                                                               ts_frame),
+                                                         file_mv_path,
+                                                         self.__c_name,
+                                                         cmn.TO_ALL))
+
+                                # open video file
+                                preview_handler, preview_path, preview_ts = self.__open_videowriter(file_mv_path,
+                                                                                                    fps,
+                                                                                                    ts_frame)
+
+                                # flush prebuffer
+                                while pre_buffer:
+                                    prev_frame = pre_buffer.popleft()
+                                    preview_handler.write(prev_frame)
+
+                                recording = True
+                                part_frames = 0
+                                file_frames = 0
+                                detected_in_last_part = False
+                            else:
+                                if not detected_in_last_part:
+                                    detected_in_last_part = True
+                                    dilp_path = file_mv_path
+                                    dilp_ts = ts_frame
+
+                    preview_rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
+
+                    # check when file alredy max size
+                    if recording:
+                        if file_frames >= max_size_of_file and detected_in_last_part:
+                            self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
+                            preview_handler, preview_path, preview_ts = self.__open_videowriter(dilp_path,
+                                                                                                fps,
+                                                                                                dilp_ts)
+
+                            file_frames = 0
+                        elif file_frames >= max_size_of_file and not detected_in_last_part:
+                            self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
+
+                            recording = False
+                            file_frames = 0
+                            part_frames = 0
+
+                    # check when part of file was writed
+                    if recording:
+                        if part_frames >= max_full_buffer_size and detected_in_last_part:
+                            part_frames = 0
+                            detected_in_last_part = False
+                        elif part_frames >= max_full_buffer_size and not detected_in_last_part:
+                            self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
+
+                            recording = False
+                            file_frames = 0
+                            part_frames = 0
+
+                    if recording:
+                        preview_handler.write(preview_rec_frame)
+                        part_frames += 1
+                    else:
+                        if len(pre_buffer) >= max_pre_buffer_size:
+                            pre_buffer.popleft()
+                        pre_buffer.append(preview_rec_frame)
+                else:
+                    t_detect = t_start_loop
+
+                # send requested now photo
+                if not now_frame_q.empty():
+                    self.__send_now_photo(now_frame_q, out, ts_frame, ts_path, frame_ts)
+
+                # write timelapse photos
+                t_timelapse_cur = t_start_loop - t_timelapse
+                if t_timelapse_cur >= TIMELAPSE_TMT:
+                    t_timelapse = t_timelapse_cur
+                    self.__write_frame_to_file(frame_ts, ts_path, SUFF_TIMELAPSE)
+
+                last_frame = frame
+            else:
+                time.sleep(REC_TMT_SHIFT)
+
+        self.__deinit_cam(cam)
+
+    def __do_work_proc_ex(self, working_f, md_f, now_frame_q, out):
         cam_h = self.__init_cam()
 
         out_big = None
@@ -190,7 +376,7 @@ class Camera:
         recorded_frames = 0
         recorded_small = 0
         mv_detected_ts = None
-        recorded_main_frame = FULL_REC_BUF_SZ
+        recorded_main_frame = MAX_FULL_BUFFER_SIZE
         recorded_file_frame = 0
 
         detected_in_last_part = False
@@ -233,8 +419,8 @@ class Camera:
                 frame_rs = self.__resize_frame(frame, HI_W, HI_H)
 
                 timestamp = datetime.datetime.now()
-                ts_fr = timestamp.strftime(cmn.TIMESTAMP_FRAME_STR)
-                ts_p = timestamp.strftime(cmn.TIMESTAMP_PATH_STR)
+                ts_fr = timestamp.strftime(cmn.TIMESTAMP_FRAME_TEMPLATE)
+                ts_p = timestamp.strftime(cmn.TIMESTAMP_PATH_TEMPLATE)
                 frame_ts = self.__add_frame_timestamp(frame_rs, ts_fr)
 
                 obs_t_c = cur_t - obs_t
@@ -286,7 +472,7 @@ class Camera:
                 last_frame = frame_rs
 
                 if recording:
-                    if recorded_main_frame >= FULL_REC_BUF_SZ:
+                    if recorded_main_frame >= MAX_FULL_BUFFER_SIZE:
                         if not detected_in_last_part:
                             out_small.release()
                             out_small = None
@@ -341,7 +527,7 @@ class Camera:
                     small_rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
                     big_rec_frame = self.__resize_frame(frame_ts, HI_W, HI_H)
 
-                    if len(pre_buf_small) >= PRE_REC_BUF_SZ:
+                    if len(pre_buf_small) >= MAX_PRE_BUFFER_SIZE:
                         pre_buf_small.popleft()
                         pre_buf_big.popleft()
 
