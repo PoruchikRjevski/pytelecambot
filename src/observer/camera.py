@@ -213,13 +213,14 @@ class Camera:
 
         return handler, path, timestamp
 
-    def __close_videowriter(self, handler, path, out, timestamp):
+    def __close_videowriter(self, handler, path, out, timestamp, length):
         handler.release()
         handler = None
         out.put_nowait(cmn.Alert(cmn.T_CAM_MOVE_MP4,
                                  cmn.MOVE_ALERT.format(str(self.__c_id),
                                                        self.__c_name,
-                                                       timestamp),
+                                                       "{:s}({:s} s.)".format(timestamp,
+                                                                              length)),
                                  path,
                                  self.__c_name))
 
@@ -227,7 +228,7 @@ class Camera:
         cam, fps = self.__init_cam(out)
 
         real_timeout = 1/fps
-        observing_timeout = 2/fps
+        observing_timeout = 0.5
         max_pre_buffer_size = VIDEO_REC_TIME_PRE * fps
         max_full_buffer_size = VIDEO_REC_TIME_FULL * fps
         max_size_of_file = 30 * fps
@@ -321,7 +322,11 @@ class Camera:
                     # check when file alredy max size
                     if recording:
                         if file_frames >= max_size_of_file and detected_in_last_part:
-                            self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
+                            self.__close_videowriter(preview_handler,
+                                                     preview_path,
+                                                     out,
+                                                     preview_ts,
+                                                     str(file_frames/fps))
                             preview_handler, preview_path, preview_ts = self.__open_videowriter(dilp_path,
                                                                                                 fps,
                                                                                                 dilp_ts,
@@ -330,7 +335,11 @@ class Camera:
                             file_frames = 0
                             detected_in_last_part = False
                         elif file_frames >= max_size_of_file and not detected_in_last_part:
-                            self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
+                            self.__close_videowriter(preview_handler,
+                                                     preview_path,
+                                                     out,
+                                                     preview_ts,
+                                                     str(file_frames / fps))
 
                             recording = False
                             file_frames = 0
@@ -342,7 +351,11 @@ class Camera:
                             part_frames = 0
                             detected_in_last_part = False
                         elif part_frames >= max_full_buffer_size and not detected_in_last_part:
-                            self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
+                            self.__close_videowriter(preview_handler,
+                                                     preview_path,
+                                                     out,
+                                                     preview_ts,
+                                                     str(file_frames / fps))
 
                             recording = False
                             file_frames = 0
@@ -359,7 +372,11 @@ class Camera:
                     t_detect = t_start_loop
 
                     if recording:
-                        self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
+                        self.__close_videowriter(preview_handler,
+                                                 preview_path,
+                                                 out,
+                                                 preview_ts,
+                                                 str(file_frames / fps))
 
                         recording = False
                         file_frames = 0
@@ -380,7 +397,11 @@ class Camera:
                 time.sleep(REC_TMT_SHIFT)
 
         if recording:
-            self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
+            self.__close_videowriter(preview_handler,
+                                     preview_path,
+                                     out,
+                                     preview_ts,
+                                     str(file_frames/fps))
 
         self.__deinit_cam(cam)
         self.state = False
