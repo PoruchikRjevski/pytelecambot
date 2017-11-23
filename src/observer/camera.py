@@ -163,15 +163,17 @@ class Camera:
 
         return frame
 
-    def __init_cam(self):
+    def __init_cam(self, out):
         cam_h = cv2.VideoCapture(int(self.__c_id))
         # res_x, res_y = cam_h.set_format(HI_W, HI_H)
-        cam_h.set(3, HI_W)
-        cam_h.set(4, HI_H)
+        # cam_h.set(3, HI_W)
+        # cam_h.set(4, HI_H)
         # cam_h.set(cv2.CAP_PROP_FPS, 30)
         fps = cam_h.get(cv2.CAP_PROP_FPS)
-        print("CAM {:s} FPS {:s}".format(str(self.__c_id),
-                                         str(fps)))
+
+        out.put_nowait(cmn.Alert(cmn.T_SYS_NOW_INFO,
+                                 "CAM {:s} FPS {:s}".format(str(self.__c_id),
+                                                            str(fps))))
 
         return cam_h, fps
 
@@ -222,7 +224,7 @@ class Camera:
                                  self.__c_name))
 
     def __do_work_proc(self, working_f, md_f, now_frame_q, out):
-        cam, fps = self.__init_cam()
+        cam, fps = self.__init_cam(out)
 
         real_timeout = 1/fps
         observing_timeout = 2/fps
@@ -348,6 +350,13 @@ class Camera:
                 else:
                     t_detect = t_start_loop
 
+                    if recording:
+                        self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
+
+                        recording = False
+                        file_frames = 0
+                        part_frames = 0
+
                 # send requested now photo
                 if not now_frame_q.empty():
                     self.__send_now_photo(now_frame_q, out, ts_frame, ts_path, frame_ts)
@@ -362,7 +371,11 @@ class Camera:
             else:
                 time.sleep(REC_TMT_SHIFT)
 
+        if recording:
+            self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
+
         self.__deinit_cam(cam)
+        self.state = False
 
     def __do_work_proc_ex(self, working_f, md_f, now_frame_q, out):
         cam_h = self.__init_cam()
