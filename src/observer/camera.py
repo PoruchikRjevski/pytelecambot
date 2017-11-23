@@ -33,6 +33,7 @@ class Camera:
 
         self.__path_d = os.path.join(out_d, "{:s}_{:s}".format(str(c_id),
                                                                c_name))
+        cmn.make_dir(self.__path_d)
 
         self.__move_time_stamp = ""
 
