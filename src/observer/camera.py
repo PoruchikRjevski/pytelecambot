@@ -159,7 +159,7 @@ class Camera:
                     cv2.FONT_HERSHEY_SIMPLEX,
                     LAST_F_SIZE,
                     LAST_F_TXT_CLR,
-                    cv2.LINE_AA)
+                    cv2.LINE_8)
 
         return frame
 
