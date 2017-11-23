@@ -42,3 +42,6 @@ A_SCALE                     = " -s {:s}x{:s}"                       # 1x2 - wxh
 SUFF_NOW                    = "now"
 SUFF_MOVE                   = "move"
 SUFF_TIMELAPSE              = "timelapse"
+
+SUFF_PREV                   = "preview"
+SUFF_FULL                   = "full"

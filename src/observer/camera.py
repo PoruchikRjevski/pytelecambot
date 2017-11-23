@@ -204,10 +204,10 @@ class Camera:
                                      self.__c_name,
                                      who_ask_list))
 
-    def __open_videowriter(self, file_mv_path, fps, timestamp):
-        path = file_mv_path.replace(".jpg", "_big.mp4")
+    def __open_videowriter(self, file_mv_path, fps, timestamp, suffix):
+        path = file_mv_path.replace(".jpg", "_{:s}.mp4".format(suffix))
         handler = cv2.VideoWriter(path,
-                                  cv2.VideoWriter_fourcc(*'H264'),
+                                  cv2.VideoWriter_fourcc(*'MP4V'),
                                   fps,
                                   (PREV_W, PREV_H))
 
@@ -252,6 +252,7 @@ class Camera:
         detected_in_last_part = False
         dilp_path = ""
         dilp_ts = ""
+        frame_detect_write = None
 
         while working_f.value and cam.isOpened():
             t_start_loop = time.time()
@@ -266,7 +267,6 @@ class Camera:
                     time.sleep(REC_TMT_SHIFT)
                     continue
 
-
                 ts_frame, ts_path = Camera.__get_current_timestamps()
                 frame_ts = self.__add_frame_timestamp(frame, ts_frame)
 
@@ -279,6 +279,7 @@ class Camera:
                         detected, frame_mv = self.__is_differed(last_frame, frame)
 
                         if detected:
+                            frame_detect_write = frame_mv
                             frame_mv_ts = self.__add_frame_timestamp(frame_mv, ts_frame)
                             file_mv_path = self.__write_frame_to_file(frame_mv_ts, ts_path, SUFF_MOVE)
 
@@ -294,7 +295,8 @@ class Camera:
                                 # open video file
                                 preview_handler, preview_path, preview_ts = self.__open_videowriter(file_mv_path,
                                                                                                     fps,
-                                                                                                    ts_frame)
+                                                                                                    ts_frame,
+                                                                                                    SUFF_PREV)
 
                                 # flush prebuffer
                                 while pre_buffer:
@@ -311,7 +313,8 @@ class Camera:
                                     dilp_path = file_mv_path
                                     dilp_ts = ts_frame
 
-                    preview_rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
+                    # preview_rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
+                    preview_rec_frame = self.__resize_frame(frame_detect_write, PREV_W, PREV_H)
 
                     # check when file alredy max size
                     if recording:
@@ -319,7 +322,8 @@ class Camera:
                             self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
                             preview_handler, preview_path, preview_ts = self.__open_videowriter(dilp_path,
                                                                                                 fps,
-                                                                                                dilp_ts)
+                                                                                                dilp_ts,
+                                                                                                SUFF_PREV)
 
                             file_frames = 0
                             detected_in_last_part = False
