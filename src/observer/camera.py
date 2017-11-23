@@ -312,6 +312,8 @@ class Camera:
                                     detected_in_last_part = True
                                     dilp_path = file_mv_path
                                     dilp_ts = ts_frame
+                        else:
+                            frame_detect_write = frame_ts
 
                     # preview_rec_frame = self.__resize_frame(frame_ts, PREV_W, PREV_H)
                     preview_rec_frame = self.__resize_frame(frame_detect_write, PREV_W, PREV_H)
