@@ -159,7 +159,7 @@ class Camera:
                     cv2.FONT_HERSHEY_SIMPLEX,
                     LAST_F_SIZE,
                     LAST_F_TXT_CLR,
-                    cv2.LINE_8)
+                    cv2.LINE_4)
 
         return frame
 
@@ -262,12 +262,13 @@ class Camera:
 
                 ret, frame = cam.read()
 
-                ts_frame, ts_path = Camera.__get_current_timestamps()
-                frame_ts = self.__add_frame_timestamp(frame, ts_frame)
-
                 if not ret:
                     time.sleep(REC_TMT_SHIFT)
                     continue
+
+
+                ts_frame, ts_path = Camera.__get_current_timestamps()
+                frame_ts = self.__add_frame_timestamp(frame, ts_frame)
 
                 # move detection
                 if md_f.value:
