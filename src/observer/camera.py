@@ -322,6 +322,7 @@ class Camera:
                                                                                                 dilp_ts)
 
                             file_frames = 0
+                            detected_in_last_part = False
                         elif file_frames >= max_size_of_file and not detected_in_last_part:
                             self.__close_videowriter(preview_handler, preview_path, out, preview_ts)
 
