@@ -519,8 +519,8 @@ class TelegramBot(telebot.TeleBot):
         logger.info("skipped: {:s}".format(str(self.__skip_updates_m())))
         self.__show_bot_started()
 
-        self.__model.check_cameras()
-        self.__machine_daemon.start_work()
+        # self.__model.check_cameras()
+        # self.__machine_daemon.start_work()
 
         while not self.__stop_f:
             upds_num = self.__get_updates()
@@ -530,8 +530,8 @@ class TelegramBot(telebot.TeleBot):
                 time.sleep(common.WAIT_TIMEOUT)
             self.__show_alert()
 
-        self.__model.switch_off_cameras()
-        self.__machine_daemon.stop_work()
+        # self.__model.switch_off_cameras()
+        # self.__machine_daemon.stop_work()
 
         self.__show_bot_stopped()
 

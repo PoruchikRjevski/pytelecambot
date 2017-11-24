@@ -117,6 +117,9 @@ def start_work():
 
     system_info_dmn = MachineDaemon()
 
+    model.check_cameras()
+    system_info_dmn.start_work()
+
     try:
         if g_v.BOT_ENABLED:
             try:
@@ -124,15 +127,13 @@ def start_work():
             except (ReadTimeout, ApiException) as e:
                 logger.error("EXCEPTION: {:s}".format(str(e)))
                 run_bot(model, system_info_dmn)
-        else:
-            model.check_cameras()
-            system_info_dmn.start_work()
     except KeyboardInterrupt:
         model.switch_off_cameras()
         system_info_dmn.stop_work()
     finally:
-        model.switch_off_cameras()
-        system_info_dmn.stop_work()
+        if g_v.BOT_ENABLED:
+            model.switch_off_cameras()
+            system_info_dmn.stop_work()
 
 
 def true_exit():

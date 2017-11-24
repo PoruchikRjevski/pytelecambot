@@ -336,7 +336,7 @@ class Camera:
                                                      preview_path,
                                                      out,
                                                      preview_ts,
-                                                     str(round(file_frames/fps, 4)))
+                                                     str(round(file_frames / fps, 4)))
                             preview_handler, preview_path, preview_ts = self.__open_videowriter(dilp_path,
                                                                                                 fps,
                                                                                                 dilp_ts,
