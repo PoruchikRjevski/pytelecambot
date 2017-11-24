@@ -99,8 +99,13 @@ def load_config(cfg_loader):
 @like_trhows
 def run_bot(model, system_info_dmn):
     work_token = g_v.TEST_TOKEN if g_v.TEST_ENABLED else g_v.REAL_TOKEN
-    telegram_bot = TelegramBot(work_token, model, system_info_dmn)
-    telegram_bot.do_work()
+
+    try:
+        telegram_bot = TelegramBot(work_token, model, system_info_dmn)
+        telegram_bot.do_work()
+    except (ReadTimeout, ApiException) as e:
+        logger.error("EXCEPTION: {:s}".format(str(e)))
+        run_bot(model, system_info_dmn)
 
 
 def start_work():
@@ -123,11 +128,7 @@ def start_work():
 
     try:
         if g_v.BOT_ENABLED:
-            try:
-                run_bot(model, system_info_dmn)
-            except (ReadTimeout, ApiException) as e:
-                logger.error("EXCEPTION: {:s}".format(str(e)))
-                run_bot(model, system_info_dmn)
+            run_bot(model, system_info_dmn)
     except KeyboardInterrupt:
         model.switch_off_cameras()
         system_info_dmn.stop_work()
