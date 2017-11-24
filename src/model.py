@@ -153,7 +153,7 @@ class UserModel:
 
     @no_tr_alert.setter
     def no_tr_alert(self, alert):
-        self.no_tr_alert = copy.copy(alert)
+        self.__no_tr_alert = copy.copy(alert)
 
     def clear_no_tr_alert(self):
         self.__no_tr_alert = None
