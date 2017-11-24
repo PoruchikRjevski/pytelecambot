@@ -96,7 +96,7 @@ def load_config(cfg_loader):
 
     return cfg_loader.load_cameras(cameras_path)
 
-
+@like_trhows
 def run_bot(model, system_info_dmn):
     work_token = g_v.TEST_TOKEN if g_v.TEST_ENABLED else g_v.REAL_TOKEN
     telegram_bot = TelegramBot(work_token, model, system_info_dmn)

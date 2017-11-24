@@ -7,15 +7,27 @@ import time
 
 import telebot
 import telebot.types
+from requests.exceptions import ReadTimeout
+from telebot.apihelper import ApiException
 
 import common
 from tele_bot.bot_def import *
 import version as ver
 
-__all__ = ['TelegramBot']
+__all__ = ['TelegramBot', 'like_trhows']
 
 
 logger = logging.getLogger("{:s}.TelegramBot".format(common.SOLUTION))
+
+
+def like_trhows(func):
+    def wrapped(*args, **kwargs):
+        try:
+            func(*args, *kwargs)
+        except (ReadTimeout, ApiException):
+            raise
+
+    return wrapped
 
 
 class TelegramBot(telebot.TeleBot):
@@ -286,6 +298,7 @@ class TelegramBot(telebot.TeleBot):
 
         return False
 
+    @like_trhows
     def __show_alert(self):
         if self.__model.is_alerts_exists():
             alert = self.__model.get_alert()
@@ -501,6 +514,7 @@ class TelegramBot(telebot.TeleBot):
             updates = self.get_updates(offset=self.last_update_id + 1, timeout=UPD_TMT)
         return total
 
+    @like_trhows
     def do_work(self):
         logger.info("skipped: {:s}".format(str(self.__skip_updates_m())))
         self.__show_bot_started()

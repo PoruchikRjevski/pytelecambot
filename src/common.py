@@ -82,17 +82,6 @@ class Alert:
 
 
 
-def like_trhows(func):
-    def wrapped(*args, **kwargs):
-        try:
-            func(*args, *kwargs)
-        except (ReadTimeout, ApiException):
-            raise
-    return wrapped
-
-
-
-
 LOG_P           = "../../LOG/"
 OUT_P           = "../../OUT/"
 LAST_D_P        = "../../OUT/L_F/"

@@ -105,5 +105,3 @@ CAM_CTRL_M_L              = [[C_C_NOW],
 #     CAM_CTRL_ON_KB.row(*row)
 #     CAM_CTRL_OFF_KB.row(*row)
 
-
-
