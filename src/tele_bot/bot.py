@@ -42,7 +42,6 @@ class TelegramBot(telebot.TeleBot):
 
         self.__model = u_model
         self.__machine_daemon = m_daemon
-        self.__machine_daemon.set_alerts(self.__model.alerts)
 
         self.__reg_state = ''
         self.__reg_pos = None

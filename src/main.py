@@ -116,6 +116,7 @@ def start_work():
     model.add_cameras(cameras_list)
 
     system_info_dmn = MachineDaemon()
+    system_info_dmn.set_alerts(model.alerts)
 
     model.check_cameras()
     system_info_dmn.start_work()
