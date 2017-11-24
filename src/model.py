@@ -1,6 +1,7 @@
 import collections
 import queue
 from multiprocessing import Queue
+import copy
 
 import base_daemon.base_daemon as b_d
 from observer.camera import *
@@ -19,6 +20,8 @@ class UserModel:
         self.__cameras = []
 
         self.__alerts = Queue()
+
+        self.__no_tr_alert = None
 
     def __set_alert_deq(self):
         for cam in self.__cameras:
@@ -138,7 +141,22 @@ class UserModel:
         return True if self.__alerts.qsize() > 0 else False
 
     def get_alert(self):
-        return self.__alerts.get_nowait()
+        alert = self.__alerts.get_nowait()
+
+        self.no_tr_alert = alert
+
+        return alert
+
+    @property
+    def no_tr_alert(self):
+        return self.__no_tr_alert
+
+    @no_tr_alert.setter
+    def no_tr_alert(self, alert):
+        self.no_tr_alert = copy.copy(alert)
+
+    def clear_no_tr_alert(self):
+        self.__no_tr_alert = None
 
     def get_now_photo(self, t_i, who):
         self.get_camera_by_i(t_i).now_frame(who)

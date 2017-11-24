@@ -298,83 +298,63 @@ class TelegramBot(telebot.TeleBot):
         return False
 
     @like_trhows
-    def __show_alert(self):
+    def __show_alert(self, alert):
+        if alert.type == common.T_CAM_NOW_PHOTO:
+            if isinstance(alert.who, list):
+                for who in alert.who:
+                    self.send_photo(chat_id=int(who), photo=open(alert.img, 'rb'))
+            else:
+                self.send_photo(chat_id=int(alert.who), photo=open(alert.img, 'rb'))
+        elif alert.type == common.T_CAM_MOVE_PHOTO:
+            logger.info("Alert: {:s} saved photo in {:s}".format(alert.msg,
+                                                                 alert.img))
+            self.send_message(chat_id=ADMIN_ID, text="MOVE photo:\n{:s}".format(alert.msg))
+            self.send_photo(chat_id=ADMIN_ID, photo=open(alert.img, 'rb'))
+
+            for i in range(0, self.__model.get_viewers_len()):
+                (s_id, s_name) = self.__model.get_viewer_by_i(i)
+                self.send_message(chat_id=s_id, text="MOVE photo:\n{:s}".format(alert.msg))
+                self.send_photo(chat_id=s_id, photo=open(alert.img, 'rb'))
+        elif alert.type == common.T_CAM_MOVE_MP4:
+            logger.info("Alert: {:s} saved video in {:s}".format(alert.msg,
+                                                                 alert.img))
+            self.send_message(chat_id=ADMIN_ID, text="MOVE video:\n{:s}".format(alert.msg))
+            self.send_video(chat_id=ADMIN_ID, data=open(alert.img, 'rb'))
+
+            for i in range(0, self.__model.get_viewers_len()):
+                (s_id, s_name) = self.__model.get_viewer_by_i(i)
+                self.send_message(chat_id=s_id, text="MOVE video:\n{:s}".format(alert.msg))
+                self.send_video(chat_id=s_id, data=open(alert.img, 'rb'))
+        elif alert.type in (common.T_SYS_NOW_INFO, common.T_SYS_ALERT):
+            self.send_message(chat_id=ADMIN_ID, text=alert.msg, parse_mode="markdown")
+        elif alert.type == common.T_CAM_SW:
+            chat = telebot.types.Chat(ADMIN_ID, 'private')
+            msg = telebot.types.Message(0, 0, 0, chat, 0, [])
+            msg.text = alert.cam
+
+            if alert.cam is not None:
+                self.__show_cam_m(msg)
+            self.send_message(chat_id=ADMIN_ID, text=alert.msg, parse_mode="markdown")
+
+            for i in range(0, self.__model.get_viewers_len()):
+                (s_id, s_name) = self.__model.get_viewer_by_i(i)
+                if alert.cam is not None:
+                    msg.chat.id = s_id
+                    self.__show_cam_m(msg)
+
+                self.send_message(s_id, alert.msg)
+
+    @like_trhows
+    def __show_alerts(self):
+        last_alert = self.__model.no_tr_alert
+
+        if last_alert is not None:
+            self.__show_alert(last_alert)
+            self.__model.clear_no_tr_alert()
+
         if self.__model.is_alerts_exists():
             alert = self.__model.get_alert()
-
-            if alert.type == common.T_CAM_NOW_PHOTO:
-                if isinstance(alert.who, list):
-                    for who in alert.who:
-                        self.send_photo(chat_id=int(who), photo=open(alert.img, 'rb'))
-                else:
-                    self.send_photo(chat_id=int(alert.who), photo=open(alert.img, 'rb'))
-            elif alert.type == common.T_CAM_MOVE_PHOTO:
-                logger.info("Alert: {:s} saved photo in {:s}".format(alert.msg,
-                                                                     alert.img))
-                self.send_message(chat_id=ADMIN_ID, text="MOVE photo:\n{:s}".format(alert.msg))
-                time.sleep(0.2)
-                self.send_photo(chat_id=ADMIN_ID, photo=open(alert.img, 'rb'))
-                time.sleep(0.2)
-
-                for i in range(0, self.__model.get_viewers_len()):
-                    (s_id, s_name) = self.__model.get_viewer_by_i(i)
-                    self.send_message(chat_id=s_id, text="MOVE photo:\n{:s}".format(alert.msg))
-                    time.sleep(0.2)
-                    self.send_photo(chat_id=s_id, photo=open(alert.img, 'rb'))
-                    time.sleep(0.2)
-            elif alert.type == common.T_CAM_MOVE_MP4:
-                logger.info("Alert: {:s} saved video in {:s}".format(alert.msg,
-                                                                     alert.img))
-                self.send_message(chat_id=ADMIN_ID, text="MOVE video:\n{:s}".format(alert.msg))
-                time.sleep(0.2)
-                self.send_video(chat_id=ADMIN_ID, data=open(alert.img, 'rb'))
-
-                for i in range(0, self.__model.get_viewers_len()):
-                    (s_id, s_name) = self.__model.get_viewer_by_i(i)
-                    self.send_message(chat_id=s_id, text="MOVE video:\n{:s}".format(alert.msg))
-                    time.sleep(0.2)
-                    self.send_video(chat_id=s_id, data=open(alert.img, 'rb'))
-                    time.sleep(0.2)
-            elif alert.type in (common.T_SYS_NOW_INFO, common.T_SYS_ALERT):
-                self.send_message(chat_id=ADMIN_ID, text=alert.msg, parse_mode="markdown")
-            elif alert.type == common.T_CAM_SW:
-                chat = telebot.types.Chat(ADMIN_ID, 'private')
-                msg = telebot.types.Message(0, 0, 0, chat, 0, [])
-                msg.text = alert.cam
-
-                if alert.cam is not None:
-                    self.__show_cam_m(msg)
-                self.send_message(chat_id=ADMIN_ID, text=alert.msg, parse_mode="markdown")
-
-                for i in range(0, self.__model.get_viewers_len()):
-                    (s_id, s_name) = self.__model.get_viewer_by_i(i)
-                    if alert.cam is not None:
-                        msg.chat.id = s_id
-                        self.__show_cam_m(msg)
-
-                    self.send_message(s_id, alert.msg)
-                    time.sleep(0.2)
-            time.sleep(0.2)
-
-            # if alert.type == common.T_CAM_MOVE_PHOTO:
-            #     self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
-            #     out_log(alert.msg)
-            # elif alert.type == common.T_CAM_MOVE_MP4:
-            #     self.send_video(ADMIN_ID, data=open(alert.img, 'rb'))
-            #     out_log(alert.msg)
-            # elif alert.type == common.T_CAM_SW:
-            #     if not alert.cam is None:
-            #         chat = telebot.types.Chat(ADMIN_ID, 'private')
-            #         msg = telebot.types.Message(0, 0, 0, chat, 0, [])
-            #         msg.text = alert.cam
-            #         self.__show_cam_m(msg)
-            #
-            #     self.send_message(ADMIN_ID, alert.msg)
-            # elif alert.type == common.T_CAM_NOW_PHOTO:
-            #     self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))
-            #     out_log(alert.msg)
-
-            # do for all viewers
+            self.__model.clear_no_tr_alert()
 
     @hi_protect
     def __do_reg(self, msg):
@@ -527,7 +507,7 @@ class TelegramBot(telebot.TeleBot):
                 logger.info("rx updates: {:s}".format(str(upds_num)))
             else:
                 time.sleep(common.WAIT_TIMEOUT)
-            self.__show_alert()
+            self.__show_alerts()
 
         # self.__model.switch_off_cameras()
         # self.__machine_daemon.stop_work()
