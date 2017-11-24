@@ -354,6 +354,9 @@ class TelegramBot(telebot.TeleBot):
 
         if self.__model.is_alerts_exists():
             alert = self.__model.get_alert()
+
+            self.__show_alert(alert)
+
             self.__model.clear_no_tr_alert()
 
     @hi_protect
