@@ -180,6 +180,7 @@ class TelegramBot(telebot.TeleBot):
             CAM_CTRL_KB.row(*row)
 
         self.send_message(msg.chat.id, TO_RULE, reply_markup=CAM_CTRL_KB)
+        time.sleep(0.2)
 
     def __show_bot_started(self):
         msg = BOT_START.format(ver.V_FULL)
@@ -299,22 +300,29 @@ class TelegramBot(telebot.TeleBot):
                 logger.info("Alert: {:s} saved photo in {:s}".format(alert.msg,
                                                                      alert.img))
                 self.send_message(chat_id=ADMIN_ID, text="MOVE photo:\n{:s}".format(alert.msg))
+                time.sleep(0.2)
                 self.send_photo(chat_id=ADMIN_ID, photo=open(alert.img, 'rb'))
+                time.sleep(0.2)
 
                 for i in range(0, self.__model.get_viewers_len()):
                     (s_id, s_name) = self.__model.get_viewer_by_i(i)
                     self.send_message(chat_id=s_id, text="MOVE photo:\n{:s}".format(alert.msg))
+                    time.sleep(0.2)
                     self.send_photo(chat_id=s_id, photo=open(alert.img, 'rb'))
+                    time.sleep(0.2)
             elif alert.type == common.T_CAM_MOVE_MP4:
                 logger.info("Alert: {:s} saved video in {:s}".format(alert.msg,
                                                                      alert.img))
                 self.send_message(chat_id=ADMIN_ID, text="MOVE video:\n{:s}".format(alert.msg))
+                time.sleep(0.2)
                 self.send_video(chat_id=ADMIN_ID, data=open(alert.img, 'rb'))
 
                 for i in range(0, self.__model.get_viewers_len()):
                     (s_id, s_name) = self.__model.get_viewer_by_i(i)
                     self.send_message(chat_id=s_id, text="MOVE video:\n{:s}".format(alert.msg))
+                    time.sleep(0.2)
                     self.send_video(chat_id=s_id, data=open(alert.img, 'rb'))
+                    time.sleep(0.2)
             elif alert.type in (common.T_SYS_NOW_INFO, common.T_SYS_ALERT):
                 self.send_message(chat_id=ADMIN_ID, text=alert.msg, parse_mode="markdown")
             elif alert.type == common.T_CAM_SW:
@@ -333,6 +341,8 @@ class TelegramBot(telebot.TeleBot):
                         self.__show_cam_m(msg)
 
                     self.send_message(s_id, alert.msg)
+                    time.sleep(0.2)
+            time.sleep(0.2)
 
             # if alert.type == common.T_CAM_MOVE_PHOTO:
             #     self.send_photo(ADMIN_ID, photo=open(alert.img, 'rb'))

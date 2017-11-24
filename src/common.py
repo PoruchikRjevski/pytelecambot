@@ -1,5 +1,7 @@
 import os
 import sys
+import telebot.types
+
 
 SOLUTION                    = "pytelecambot"
 
@@ -80,8 +82,13 @@ class Alert:
 
 
 
-
-
+def like_trhows(func):
+    def wrapped(*args, **kwargs):
+        try:
+            func(*args, *kwargs)
+        except (ReadTimeout, ApiException):
+            raise
+    return wrapped
 
 
 

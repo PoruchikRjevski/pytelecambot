@@ -10,6 +10,9 @@ import queue
 from optparse import OptionParser
 import logging
 
+from requests.exceptions import ReadTimeout
+from telebot.apihelper import ApiException
+
 import common
 import version as ver
 from tele_bot.bot import *
@@ -94,6 +97,12 @@ def load_config(cfg_loader):
     return cfg_loader.load_cameras(cameras_path)
 
 
+def run_bot(model, system_info_dmn):
+    work_token = g_v.TEST_TOKEN if g_v.TEST_ENABLED else g_v.REAL_TOKEN
+    telegram_bot = TelegramBot(work_token, model, system_info_dmn)
+    telegram_bot.do_work()
+
+
 def start_work():
     cfg_loader = ConfigLoader()
     cameras_list = load_config(cfg_loader)
@@ -110,13 +119,18 @@ def start_work():
 
     try:
         if g_v.BOT_ENABLED:
-            work_token = g_v.TEST_TOKEN if g_v.TEST_ENABLED else g_v.REAL_TOKEN
-            telegram_bot = TelegramBot(work_token, model, system_info_dmn)
-            telegram_bot.do_work()
+            try:
+                run_bot(model, system_info_dmn)
+            except (ReadTimeout, ApiException) as e:
+                logger.error("EXCEPTION: {:s}".format(str(e)))
+                run_bot(model, system_info_dmn)
         else:
             model.check_cameras()
             system_info_dmn.start_work()
     except KeyboardInterrupt:
+        model.switch_off_cameras()
+        system_info_dmn.stop_work()
+    finally:
         model.switch_off_cameras()
         system_info_dmn.stop_work()
 

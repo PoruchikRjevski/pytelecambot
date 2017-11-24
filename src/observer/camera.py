@@ -172,10 +172,14 @@ class Camera:
         cam_h.set(cv2.CAP_PROP_FRAME_HEIGHT, HI_H)
         # cam_h.set(cv2.CAP_PROP_FPS, 30)
         fps = cam_h.get(cv2.CAP_PROP_FPS)
+        real_w = cam_h.get(cv2.CAP_PROP_FRAME_WIDTH)
+        real_h = cam_h.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
         out.put_nowait(cmn.Alert(cmn.T_SYS_NOW_INFO,
-                                 "CAM {:s} FPS {:s}".format(str(self.__c_id),
-                                                            str(fps))))
+                                 "CAM {:s}. {:s}x{:s} with FPS {:s}".format(str(self.__c_id),
+                                                                            str(real_w),
+                                                                            str(real_h),
+                                                                            str(fps))))
 
         return cam_h, fps
 
@@ -210,6 +214,7 @@ class Camera:
         path = file_mv_path.replace(".jpg", "_{:s}.mp4".format(suffix))
         handler = cv2.VideoWriter(path,
                                   cv2.VideoWriter_fourcc(*'H264'),
+                                  # cv2.VideoWriter_fourcc(*'MJPG'),
                                   fps,
                                   (PREV_W, PREV_H))
 
@@ -331,7 +336,7 @@ class Camera:
                                                      preview_path,
                                                      out,
                                                      preview_ts,
-                                                     str(file_frames/fps))
+                                                     str(round(file_frames/fps, 4)))
                             preview_handler, preview_path, preview_ts = self.__open_videowriter(dilp_path,
                                                                                                 fps,
                                                                                                 dilp_ts,
@@ -344,7 +349,7 @@ class Camera:
                                                      preview_path,
                                                      out,
                                                      preview_ts,
-                                                     str(file_frames / fps))
+                                                     str(round(file_frames / fps, 4)))
 
                             recording = False
                             file_frames = 0
@@ -360,7 +365,7 @@ class Camera:
                                                      preview_path,
                                                      out,
                                                      preview_ts,
-                                                     str(file_frames / fps))
+                                                     str(round(file_frames / fps, 4)))
 
                             recording = False
                             file_frames = 0
@@ -382,7 +387,7 @@ class Camera:
                                                  preview_path,
                                                  out,
                                                  preview_ts,
-                                                 str(file_frames / fps))
+                                                 str(round(file_frames / fps, 4)))
 
                         recording = False
                         file_frames = 0
@@ -402,15 +407,15 @@ class Camera:
             else:
                 time.sleep(REC_TMT_SHIFT)
 
-            cur_t = time.time() - t_start_loop
-            print("cycle: {:s}, ms".format(str(cur_t)))
+            # cur_t = time.time() - t_start_loop
+            # print("cycle: {:s}, ms".format(str(cur_t)))
 
         if recording:
             self.__close_videowriter(preview_handler,
                                      preview_path,
                                      out,
                                      preview_ts,
-                                     str(file_frames/fps))
+                                     str(round(file_frames / fps, 4)))
 
         self.__deinit_cam(cam)
         self.state = False
