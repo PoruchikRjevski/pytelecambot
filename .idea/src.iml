@@ -12,6 +12,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/sql_daemon" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/tele_bot" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/time_checker" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/out" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.5.3 virtualenv at ~/venv/cve_t" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

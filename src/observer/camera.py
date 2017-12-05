@@ -122,7 +122,8 @@ class Camera:
     def __accept_gray_filter(self, frame):
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    def __resize_frame(self, frame, p_w, p_h):
+    @staticmethod
+    def __resize_frame(frame, p_w, p_h):
         h, w, _ = frame.shape
 
         if h > p_h and w > p_w:
@@ -167,9 +168,9 @@ class Camera:
     def __init_cam(self, out):
         cam_h = cv2.VideoCapture(int(self.__c_id))
         # res_x, res_y = cam_h.set_format(HI_W, HI_H)
-        cam_h.set(cv2.CAP_PROP_FOURCC, MJPG_CODEC)
-        cam_h.set(cv2.CAP_PROP_FRAME_WIDTH, HI_W)
-        cam_h.set(cv2.CAP_PROP_FRAME_HEIGHT, HI_H)
+        # cam_h.set(cv2.CAP_PROP_FOURCC, MJPG_CODEC)
+        # cam_h.set(cv2.CAP_PROP_FRAME_WIDTH, HI_W)
+        # cam_h.set(cv2.CAP_PROP_FRAME_HEIGHT, HI_H)
         # cam_h.set(cv2.CAP_PROP_FPS, 30)
         fps = cam_h.get(cv2.CAP_PROP_FPS)
         real_w = cam_h.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -213,10 +214,10 @@ class Camera:
     def __open_videowriter(self, file_mv_path, fps, timestamp, suffix):
         path = file_mv_path.replace(".jpg", "_{:s}.mp4".format(suffix))
         handler = cv2.VideoWriter(path,
-                                  cv2.VideoWriter_fourcc(*'H264'),
+                                  cv2.VideoWriter_fourcc(*'X264'),
                                   # cv2.VideoWriter_fourcc(*'MJPG'),
                                   fps,
-                                  (PREV_W, PREV_H))
+                                  (LO_W, LO_H))
 
         return handler, path, timestamp
 
@@ -235,7 +236,7 @@ class Camera:
         cam, fps = self.__init_cam(out)
 
         real_timeout = 1/fps
-        observing_timeout = 0.1
+        observing_timeout = 1/15
         max_pre_buffer_size = VIDEO_REC_TIME_PRE * fps
         max_full_buffer_size = VIDEO_REC_TIME_FULL * fps
         max_size_of_file = 30 * fps
@@ -262,6 +263,11 @@ class Camera:
         dilp_ts = ""
         frame_detect_write = None
 
+        # test timings
+        t_test = t_rec
+        frames = 0
+        av_loop_time = 0
+
         while working_f.value and cam.isOpened():
             t_start_loop = time.time()
 
@@ -279,17 +285,21 @@ class Camera:
                     continue
 
                 ts_frame, ts_path = Camera.__get_current_timestamps()
+
+                frame_for_detect = Camera.__resize_frame(frame, LO_W, LO_H)
+                frame_for_detect_ts = self.__add_frame_timestamp(frame_for_detect, ts_frame)
+
                 frame_ts = self.__add_frame_timestamp(frame, ts_frame)
 
-                frame_detect_write = frame_ts
+                frame_detect_write = frame_for_detect_ts
 
                 # move detection
                 if md_f.value:
                     t_detec_temp = t_start_loop - t_detect
-                    if t_detec_temp >= observing_timeout:
+                    if t_detec_temp >= observing_timeout and last_frame is not None:
                         t_detect = t_detec_temp
 
-                        detected, frame_mv = self.__is_differed(last_frame, frame)
+                        detected, frame_mv = self.__is_differed(last_frame, frame_for_detect)
 
                         if detected:
                             frame_detect_write = frame_mv
@@ -326,8 +336,8 @@ class Camera:
                                     dilp_path = file_mv_path
                                     dilp_ts = ts_frame
 
-                    preview_rec_frame = self.__resize_frame(frame_detect_write, PREV_W, PREV_H)
-                    # preview_rec_frame = frame_detect_write
+                    # preview_rec_frame = self.__resize_frame(frame_detect_write, PREV_W, PREV_H)
+                    preview_rec_frame = frame_detect_write
 
                     # check when file alredy max size
                     if recording:
@@ -403,11 +413,24 @@ class Camera:
                     t_timelapse = t_timelapse_cur
                     self.__write_frame_to_file(frame_ts, ts_path, SUFF_TIMELAPSE)
 
-                last_frame = frame
+                last_frame = frame_for_detect
             else:
                 time.sleep(REC_TMT_SHIFT)
 
-            # cur_t = time.time() - t_start_loop
+            cur_t = time.time() - t_start_loop
+            # 
+            # t_test_c = time.time() - t_test
+            # frames += 1
+            # av_loop_time = (av_loop_time + cur_t)/2
+            # if t_test_c >= 1:
+            #     t_test = time.time()
+            #     print("cam: {:s}. fps: {:s}. av_time: {:s}".format(str(self.__c_id),
+            #                                                        str(frames),
+            #                                                        str(av_loop_time)))
+            #     frames = 0
+            #     av_loop_time = 0
+
+
             # print("cycle: {:s}, ms".format(str(cur_t)))
 
         if recording:

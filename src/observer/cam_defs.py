@@ -1,4 +1,4 @@
-VIDEO_REC_TIME_FULL         = 3
+VIDEO_REC_TIME_FULL         = 310
 VIDEO_REC_TIME_PRE          = 1
 
 VIDEO_REC_FPS               = 30
