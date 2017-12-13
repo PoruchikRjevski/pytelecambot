@@ -5,6 +5,8 @@ import queue
 import logging
 import time
 
+import pyglet
+
 import telebot
 import telebot.types
 from requests.exceptions import ReadTimeout
@@ -61,6 +63,14 @@ class TelegramBot(telebot.TeleBot):
                                                             str(msg.chat.id),
                                                             msg.chat.first_name))
             self.__show_m(msg)
+
+        @bot.message_handler(content_types=["audio"])
+        def handle_audio(msg):
+            audio_file = self.get_file(msg.audio[-1].file_id)
+
+            song = pyglet.media.load(audio_file)
+            song.play()
+            pyglet.app.run()
 
         @bot.message_handler(content_types=["text"])
         def handle_text(msg):
