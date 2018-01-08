@@ -168,9 +168,9 @@ class Camera:
     def __init_cam(self, out):
         cam_h = cv2.VideoCapture(int(self.__c_id))
         # res_x, res_y = cam_h.set_format(HI_W, HI_H)
-        # cam_h.set(cv2.CAP_PROP_FOURCC, MJPG_CODEC)
-        # cam_h.set(cv2.CAP_PROP_FRAME_WIDTH, HI_W)
-        # cam_h.set(cv2.CAP_PROP_FRAME_HEIGHT, HI_H)
+        cam_h.set(cv2.CAP_PROP_FOURCC, MJPG_CODEC)
+        cam_h.set(cv2.CAP_PROP_FRAME_WIDTH, HI_W)
+        cam_h.set(cv2.CAP_PROP_FRAME_HEIGHT, HI_H)
         # cam_h.set(cv2.CAP_PROP_FPS, 30)
         fps = cam_h.get(cv2.CAP_PROP_FPS)
         real_w = cam_h.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -231,6 +231,52 @@ class Camera:
                                                                               length)),
                                  path,
                                  self.__c_name))
+
+    # def __do_work_proc_ex(self, working_f, md_f, now_frame_q, out):
+    #     cam, fps = self.__init_cam(out)
+    #
+    #     real_timeout = 1 / fps
+    #     real_timeout_shift = real_timeout / 2
+    #     observing_timeout = 3 / fps
+    #
+    #     prev_frame_detect = None
+    #
+    #     print("real tmt: {:s}".format(str(real_timeout)))
+    #
+    #     t_rec = time.time()
+    #     t_detect = t_rec
+    #
+    #     while working_f.value and cam.isOpened():
+    #         t_start_loop = time.time()
+    #
+    #         t_rec_temp = t_start_loop - t_rec
+    #         if t_rec_temp >= real_timeout:
+    #             t_rec = t_rec_temp
+    #
+    #             ret, frame = cam.read()
+    #
+    #             if not ret:
+    #                 time.sleep(real_timeout_shift)
+    #                 continue
+    #
+    #             frame_for_detect = Camera.__resize_frame(frame, PREV_W, PREV_H)
+    #
+    #             if md_f.value:
+    #                 t_detec_temp = t_start_loop - t_detect
+    #                 if t_detec_temp >= observing_timeout and prev_frame_detect is not None:
+    #                     t_detect = t_detec_temp
+    #
+    #                     is_detected, contoured_frame = self.__is_differed(prev_frame_detect, frame_for_detect)
+    #
+    #                     if is_detected:
+    #
+    #
+    #             prev_frame_detect = frame_for_detect
+    #         else:
+    #             time.sleep(real_timeout_shift)
+    #
+    #     self.__deinit_cam(cam)
+    #     self.state = False
 
     def __do_work_proc(self, working_f, md_f, now_frame_q, out):
         cam, fps = self.__init_cam(out)

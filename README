@@ -16,6 +16,7 @@ For exec:
 - pip:
     - telegrambotapi
     - opencv-python
+    - pyglet
 - apt:
     - sqlitebrowser
     - libsqlite3-dev

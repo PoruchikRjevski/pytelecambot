@@ -64,15 +64,16 @@ class TelegramBot(telebot.TeleBot):
                                                             msg.chat.first_name))
             self.__show_m(msg)
 
-        @bot.message_handler(content_types=["audio"])
+        @bot.message_handler(content_types=['audio'])
         def handle_audio(msg):
             audio_file = self.get_file(msg.audio[-1].file_id)
+            logger.info("audio: {:s}".format(audio_file))
 
             song = pyglet.media.load(audio_file)
             song.play()
             pyglet.app.run()
 
-        @bot.message_handler(content_types=["text"])
+        @bot.message_handler(content_types=['text'])
         def handle_text(msg):
             t_comm = msg.text
 
