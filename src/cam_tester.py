@@ -46,6 +46,9 @@ focus_v = Value("i", 0)
 HEIGHT = 480
 WIDTH = 640
 
+DET_H = 90
+DET_W = 160
+
 
 def grabber_loop(cam_id, frames, working, t_min, t_max, c_min, c_max, focus):
     saved_focus = -1

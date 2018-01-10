@@ -232,51 +232,51 @@ class Camera:
                                  path,
                                  self.__c_name))
 
-    # def __do_work_proc_ex(self, working_f, md_f, now_frame_q, out):
-    #     cam, fps = self.__init_cam(out)
-    #
-    #     real_timeout = 1 / fps
-    #     real_timeout_shift = real_timeout / 2
-    #     observing_timeout = 3 / fps
-    #
-    #     prev_frame_detect = None
-    #
-    #     print("real tmt: {:s}".format(str(real_timeout)))
-    #
-    #     t_rec = time.time()
-    #     t_detect = t_rec
-    #
-    #     while working_f.value and cam.isOpened():
-    #         t_start_loop = time.time()
-    #
-    #         t_rec_temp = t_start_loop - t_rec
-    #         if t_rec_temp >= real_timeout:
-    #             t_rec = t_rec_temp
-    #
-    #             ret, frame = cam.read()
-    #
-    #             if not ret:
-    #                 time.sleep(real_timeout_shift)
-    #                 continue
-    #
-    #             frame_for_detect = Camera.__resize_frame(frame, PREV_W, PREV_H)
-    #
-    #             if md_f.value:
-    #                 t_detec_temp = t_start_loop - t_detect
-    #                 if t_detec_temp >= observing_timeout and prev_frame_detect is not None:
-    #                     t_detect = t_detec_temp
-    #
-    #                     is_detected, contoured_frame = self.__is_differed(prev_frame_detect, frame_for_detect)
-    #
-    #                     if is_detected:
-    #
-    #
-    #             prev_frame_detect = frame_for_detect
-    #         else:
-    #             time.sleep(real_timeout_shift)
-    #
-    #     self.__deinit_cam(cam)
-    #     self.state = False
+    def __do_work_proc_ex(self, working_f, md_f, now_frame_q, out):
+        cam, fps = self.__init_cam(out)
+
+        real_timeout = 1 / fps
+        real_timeout_shift = real_timeout / 2
+        observing_timeout = 3 / fps
+        start_timeout = 3
+
+        prev_frame_detect = None
+
+        print("real tmt: {:s}".format(str(real_timeout)))
+
+        t_rec = time.time()
+        t_detect = t_rec
+
+        while working_f.value and cam.isOpened():
+            t_start_loop = time.time()
+
+            t_rec_temp = t_start_loop - t_rec
+            if t_rec_temp >= real_timeout:
+                t_rec = t_rec_temp
+
+                ret, frame = cam.read()
+
+                if not ret:
+                    time.sleep(real_timeout_shift)
+                    continue
+
+                frame_for_detect = Camera.__resize_frame(frame, PREV_W, PREV_H)
+
+                if md_f.value:
+                    t_detec_temp = t_start_loop - t_detect
+                    if t_detec_temp >= observing_timeout and prev_frame_detect is not None:
+                        t_detect = t_detec_temp
+
+                        is_detected, contoured_frame = self.__is_differed(prev_frame_detect, frame_for_detect)
+
+                        # if is_detected:
+
+                prev_frame_detect = frame_for_detect
+            else:
+                time.sleep(real_timeout_shift)
+
+        self.__deinit_cam(cam)
+        self.state = False
 
     def __do_work_proc(self, working_f, md_f, now_frame_q, out):
         cam, fps = self.__init_cam(out)
@@ -506,7 +506,7 @@ class Camera:
 
     @staticmethod
     def get_dilate(thresh):
-        return cv2.dilate(thresh, None, iterations=1)
+        return cv2.dilate(thresh, None, iterations=2)
 
     @staticmethod
     def check_contours(thresh, out, c_min, c_max):
@@ -537,7 +537,7 @@ class Camera:
             else:
                 for c in true_cont:
                     (x, y, w, h) = cv2.boundingRect(c)
-                    cv2.rectangle(out, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    cv2.rectangle(out, (x, y), (x + w, y + h), (0, 255, 0), 1)
 
         return detected, out
 
