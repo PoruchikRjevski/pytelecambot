@@ -20,7 +20,7 @@ CPU_INTERVAL            = 0
 
 CRIT_CPU_LOAD           = 80
 CRIT_RAM_LOAD           = 90
-CRIT_DISK_LOAD          = 99
+CRIT_DISK_LOAD          = 99.5
 CRIT_BAT_VOL            = 15
 
 
