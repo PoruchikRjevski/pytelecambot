@@ -24,17 +24,7 @@ For exec:
     sudo apt-get install python3-gi glade
 
 
-
-TODO:
-- show for admin number of ids in buttons
-
 ffmpeg -i frame_%d.jpg res.mp4
-
-478415418 = Mary
-
-478415418 = Mary
-478415419 = Bary
-478415420 = Vary
 
 Modules:
 - PyTeleCamBot

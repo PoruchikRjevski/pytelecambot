@@ -1,8 +1,8 @@
 import telebot.types
 
 # main defs
-ADMIN_ID                = '74810100' # 74810100
-TOKEN                   = '364842219:AAEl03t9yKk0qxz0afTWDLwVaPRIzWpYRZc'
+ADMIN_ID                = 'xxxxxxxx'
+TOKEN                   = 'xxxxxxxxx:yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'
 UPD_TMT                 = 1
 
 # messages
